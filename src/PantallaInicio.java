@@ -117,7 +117,7 @@ public class PantallaInicio extends JPanel implements KeyListener {
 
         //Inicializar Audio/Música
         reproductor = new Audio();
-        reproductor.reproducir("resources/lobby-theme.wav");
+        reproductor.reproducir("lobby-theme.wav");
     }
 
     private void inicializarFantasmas() {
