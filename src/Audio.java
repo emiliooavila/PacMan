@@ -1,4 +1,3 @@
-
 import javax.sound.sampled.*;
 import java.io.IOException;
 import java.net.URL;
@@ -8,7 +7,7 @@ public class Audio {
 
     public void reproducir(String nombreArchivo) {
         try {
-            URL sonidoURL = getClass().getClassLoader().getResource("lobby-theme.wav");
+            URL sonidoURL = getClass().getClassLoader().getResource(nombreArchivo);
             if (sonidoURL == null) {
                 System.err.println("No se encontró el archivo: " + nombreArchivo);
                 return;
