@@ -21,10 +21,20 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private int vidas = 3;
     private boolean running = true;
     private Thread gameThread;
+    private Pacman pacman=new Pacman();
+
 
     // Variables para efectos
     private long tiempoInicio;
     private boolean mostrarPuntos = true;
+    enum Direction {UP,DOWN,LEFT,RIGHT,NONE};
+    private Direction movment=Direction.RIGHT;
+    private Direction lstmovment=Direction.RIGHT;
+    Direction aux=movment;
+    private Timer moveTimer;
+
+
+
 
     // Matriz del laberinto
     // 0 = espacio vacío, 1 = pared, 2 = punto, 3 = power pellet
@@ -52,7 +62,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             {1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1},
             {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
             {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
-            {1,3,2,2,1,1,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,1,1,2,2,3,1},
+            {1,3,2,2,1,1,2,2,2,2,2,2,2,0,4,2,2,2,2,2,2,2,1,1,2,2,3,1},
             {1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1},
             {1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1},
             {1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1},
@@ -198,6 +208,92 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         // Iniciar el hilo del juego
         gameThread = new Thread(this);
         gameThread.start();
+        moveTimer=new Timer(350, e->{
+
+
+            boolean can=false;
+            int x = pacman.getXposcion();
+            int y = pacman.getYposcion();
+            if (aux != movment) {
+                switch (aux) {
+                    case UP:
+                        if (y>0&&laberinto[y-1][x]!=1){
+                            movment=Direction.UP;
+                        }
+                        break;
+                    case DOWN:
+                        if (y<HEIGHT-1&&laberinto[y+1][x]!=1){
+                            movment = Direction.DOWN;
+                        }
+                        break;
+                    case LEFT:
+                        if (x>0&&laberinto[y][x-1]!=1){
+                            movment = Direction.LEFT;
+                        }
+                        break;
+                    case RIGHT:
+                        if(x<WIDTH-1&&laberinto[y][x+1]!=1){
+                            movment = Direction.RIGHT;
+                        }
+                        break;
+                }
+            }
+            x = pacman.getXposcion();
+            y = pacman.getYposcion();
+            switch (movment) {
+                case UP:
+                    if(y>0&&laberinto[y-1][x]!=1){
+
+                        try{
+                            ImageIcon imagen=new ImageIcon(getClass().getResource("PacmangifUP.gif"));
+                            pacman.setImagen(imagen);
+                        }catch(Exception error){
+                            System.err.println("No se pudo imprimir el gif "+error);
+                        }
+                        pacman.moverArriba();
+                    }
+                    break;
+                case DOWN:
+                    if (y<HEIGHT-1&&laberinto[y+1][x]!=1){
+                        try{
+                            ImageIcon imagen=new ImageIcon(getClass().getResource("PacmangifDOWN.gif"));
+                            pacman.setImagen(imagen);
+                        }catch(Exception error){
+                            System.err.println("No se pudo imprimir el gif "+error);
+                        }
+                        pacman.moverAbajo();
+                    }
+                    break;
+                case LEFT:
+                    if(x>0&&laberinto[y][x-1]!=1){
+                        try{
+                            ImageIcon imagen=new ImageIcon(getClass().getResource("PacmangifLEFT.gif"));
+                            pacman.setImagen(imagen);
+                        }catch(Exception error){
+                            System.err.println("No se pudo imprimir el gif "+error);
+                        }
+                        pacman.moverIzquierda();
+                    }
+                    break;
+                case RIGHT:
+                    if (x<WIDTH-1&&laberinto[y][x+1]!=1){
+                        try{
+                            ImageIcon imagen=new ImageIcon(getClass().getResource("Pacmangif.gif"));
+                            pacman.setImagen(imagen);
+                        }catch(Exception error){
+                            System.err.println("No se pudo imprimir el gif "+error);
+                        }
+
+                        pacman.moverDerecha();
+                    }
+                    break;
+                case NONE:
+                    break;
+            }
+
+
+        });
+        moveTimer.start();
     }
 
     @Override
@@ -238,25 +334,52 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                         break;
 
                     case 2: // Puntos (amarillo pequeño con parpadeo)
-                        if (mostrarPuntos) {
                             g.setColor(Color.YELLOW);
                             int dotSize = CELL_SIZE / 6;
                             int dotX = pixelX + CELL_SIZE / 2 - dotSize / 2;
                             int dotY = pixelY + CELL_SIZE / 2 - dotSize / 2;
                             g.fillOval(dotX, dotY, dotSize, dotSize);
-                        }
+
                         break;
 
                     case 3: // Power Pellets (rosa grande)
-                        g.setColor(new Color(255, 184, 255));
-                        int pelletSize = CELL_SIZE / 2;
-                        int pelletX = pixelX + CELL_SIZE / 2 - pelletSize / 2;
-                        int pelletY = pixelY + CELL_SIZE / 2 - pelletSize / 2;
-                        g.fillOval(pelletX, pelletY, pelletSize, pelletSize);
+                        if(this.mostrarPuntos){
+                            g.setColor(new Color(255, 184, 255));
+                            int pelletSize = CELL_SIZE / 2;
+                            int pelletX = pixelX + CELL_SIZE / 2 - pelletSize / 2;
+                            int pelletY = pixelY + CELL_SIZE / 2 - pelletSize / 2;
+                            g.fillOval(pelletX, pelletY, pelletSize, pelletSize);
 
-                        // Efecto de brillo
-                        g.setColor(Color.WHITE);
-                        g.fillOval(pelletX + pelletSize/4, pelletY + pelletSize/4, pelletSize/4, pelletSize/4);
+                            // Efecto de brillo
+                            g.setColor(Color.WHITE);
+                            g.fillOval(pelletX + pelletSize/4, pelletY + pelletSize/4, pelletSize/4, pelletSize/4);
+                        }
+                        break;
+                    case 4:
+
+                        ImageIcon imagen = pacman.getImagen();
+
+
+                        int TamPacman=CELL_SIZE/2;
+                        int pacX=(pacman.getXposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
+                        int pacY=(pacman.getYposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
+                        if(laberinto[pacman.getYposcion()][pacman.getXposcion()]==2){
+                            //aquí poner la suma de puntaje
+                            laberinto[pacman.getYposcion()][pacman.getXposcion()]=0;
+                        }
+                        else if(laberinto[pacman.getYposcion()][pacman.getXposcion()]==3){
+                            //aquí poner el powerup
+                            laberinto[pacman.getYposcion()][pacman.getXposcion()]=0;
+                        }
+                        if(pacman.getXposcion()==0&&pacman.getYposcion()==14){
+                            pacman.setXposcion(27);
+                        }
+                        else if(pacman.getXposcion()==27&&pacman.getYposcion()==14){
+                            pacman.setXposcion(0);
+                        }
+                        if(imagen!=null){
+                            imagen.paintIcon(this, g, pacX, pacY);
+                        }
                         break;
 
                     case 0: // Espacio vacío
@@ -314,6 +437,8 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             // Repintar
             repaint();
 
+
+
             try {
                 Thread.sleep(16); // ~60 FPS
             } catch (InterruptedException e) {
@@ -353,6 +478,28 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     public void setHighScore(int score) {
         this.highScore = score;
     }
+    public void moverPacman(KeyEvent e){
+        int x = pacman.getXposcion();
+        int y = pacman.getYposcion();
+        boolean can=false;
+
+        switch (e.getKeyCode()){
+            case KeyEvent.VK_UP:
+                aux=Direction.UP;
+                break;
+            case KeyEvent.VK_DOWN:
+                aux=Direction.DOWN;
+                break;
+            case KeyEvent.VK_LEFT:
+                aux=Direction.LEFT;
+                break;
+            case KeyEvent.VK_RIGHT:
+                aux=Direction.RIGHT;
+                break;
+        }
+
+    }
+
 
     // Eventos de teclado (para futura expansión)
     @Override
@@ -365,6 +512,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 // Pausar/reanudar juego
                 break;
         }
+        moverPacman(e);
     }
 
     @Override
