@@ -1,0 +1,11 @@
+Emilio Avila
+Diseño de pantalla de inicio, niveles y manejo de resources.
+
+Diego Delgado
+Diseño, movimiento y funcionalidades de Pac-Man.
+
+Rey Picazo
+Diseño, movimiento y funcionalidades de los fantasmas. Incluido el fantasma extra (Piczy) por ser 4 miembros de equipo.
+
+Maxy Velazquez
+Diseño, movimiento y funcionalidades de Pac-Man.

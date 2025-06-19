@@ -469,7 +469,7 @@ public class PantallaInicio extends JPanel implements KeyListener {
 
             case 2: // CREDITOS
                 System.out.println("Seleccionado: CREDITOS");
-                // Aquí iría la lógica para cambiar a la pantalla de créditos
+                iniciarCreditos();
                 break;
 
             case 3: // SALIR
@@ -495,6 +495,16 @@ public class PantallaInicio extends JPanel implements KeyListener {
 
             // Cerrar la ventana actual de inicio
             SwingUtilities.getWindowAncestor(this).dispose();
+        });
+    }
+
+    private void iniciarCreditos() {
+        // Ocultar la ventana actual de inicio
+        SwingUtilities.getWindowAncestor(this).setVisible(false);
+
+        // Crear nueva ventana para los créditos, pasando referencia de esta ventana
+        SwingUtilities.invokeLater(() -> {
+            new Creditos((JFrame) SwingUtilities.getWindowAncestor(this));
         });
     }
 
