@@ -16,6 +16,9 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private int screenHeight;
     private double scaleX, scaleY;
 
+    //Instancia para regresar a PantallaInicio
+    private JFrame ventanaInicio;
+
     // Variables del juego
     private int highScore = 0;
     private int vidas = 3;
@@ -23,6 +26,10 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private Thread gameThread;
     private Pacman pacman=new Pacman();
 
+    // Variables para el menú de pausa
+    private boolean enPausa = false;
+    private int opcionSeleccionada = 0; // 0 = Continuar, 1 = Salir
+    private final String[] opcionesMenu = {"CONTINUAR", "SALIR AL MENÚ"};
 
     // Variables para efectos
     private long tiempoInicio;
@@ -32,9 +39,6 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private Direction lstmovment=Direction.RIGHT;
     Direction aux=movment;
     private Timer moveTimer;
-
-
-
 
     // Matriz del laberinto
     // 0 = espacio vacío, 1 = pared, 2 = punto, 3 = power pellet
@@ -209,7 +213,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         gameThread = new Thread(this);
         gameThread.start();
         moveTimer=new Timer(350, e->{
-
+            if (enPausa) return; // No mover si está en pausa
 
             boolean can=false;
             int x = pacman.getXposcion();
@@ -319,6 +323,11 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
 
         // Dibujar UI
         dibujarUI(g2d);
+
+        // Dibujar menú de pausa si está activo
+        if (enPausa) {
+            dibujarMenuPausa(g2d);
+        }
     }
 
     private void dibujarMapa(Graphics2D g) {
@@ -334,11 +343,11 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                         break;
 
                     case 2: // Puntos (amarillo pequeño con parpadeo)
-                            g.setColor(Color.YELLOW);
-                            int dotSize = CELL_SIZE / 6;
-                            int dotX = pixelX + CELL_SIZE / 2 - dotSize / 2;
-                            int dotY = pixelY + CELL_SIZE / 2 - dotSize / 2;
-                            g.fillOval(dotX, dotY, dotSize, dotSize);
+                        g.setColor(Color.YELLOW);
+                        int dotSize = CELL_SIZE / 6;
+                        int dotX = pixelX + CELL_SIZE / 2 - dotSize / 2;
+                        int dotY = pixelY + CELL_SIZE / 2 - dotSize / 2;
+                        g.fillOval(dotX, dotY, dotSize, dotSize);
 
                         break;
 
@@ -419,25 +428,125 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             // Dibujar Pac-Man (círculo con boca)
             g.fillArc(x, vidaY, vidaSize, vidaSize, 45, 270);
         }
+    }
 
+    private void dibujarMenuPausa(Graphics2D g) {
+        // Difuminar el fondo
+        g.setColor(new Color(0, 0, 0, 150)); // Negro semi-transparente
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Configurar fuente para el menú
+        Font tituloFont = new Font("Arial", Font.BOLD, 48);
+        Font opcionesFont = new Font("Arial", Font.BOLD, 32);
+
+        // Título "PAUSA"
+        g.setFont(tituloFont);
+        g.setColor(Color.YELLOW);
+        FontMetrics titleFm = g.getFontMetrics();
+        String pausaText = "PAUSA";
+        int titleWidth = titleFm.stringWidth(pausaText);
+        int titleX = (screenWidth - titleWidth) / 2;
+        int titleY = screenHeight / 2 - 100;
+        g.drawString(pausaText, titleX, titleY);
+
+        // Opciones del menú
+        g.setFont(opcionesFont);
+        FontMetrics optionsFm = g.getFontMetrics();
+
+        for (int i = 0; i < opcionesMenu.length; i++) {
+            String opcion = opcionesMenu[i];
+            int optionWidth = optionsFm.stringWidth(opcion);
+            int currentX = (screenWidth - optionWidth) / 2;
+            int menuY = titleY + 80 + (i * 60);
+
+            // Dibujar Pac-Man como cursor para la opción seleccionada
+            if (i == opcionSeleccionada) {
+                int cursorSize = 20;
+                int cursorX = currentX - cursorSize - 15;
+                int cursorY = menuY - cursorSize + 5;
+
+                g.setColor(Color.YELLOW);
+                g.fillArc(cursorX, cursorY, cursorSize, cursorSize, 45, 270);
+            }
+
+            // Configurar color de la opción
+            if (i == opcionSeleccionada) {
+                // Sombra (color marrón oscuro)
+                g.setColor(new Color(139, 69, 19));
+                g.drawString(opcion, currentX + 3, menuY + 3);
+
+                // Texto principal (amarillo)
+                g.setColor(Color.YELLOW);
+                g.drawString(opcion, currentX, menuY);
+            } else {
+                // Otras opciones (color naranja suave)
+                g.setColor(new Color(255, 184, 82));
+                g.drawString(opcion, currentX, menuY);
+            }
+        }
+    }
+
+    //metodos Mapa
+    private void manejarMenuPausa(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                opcionSeleccionada = (opcionSeleccionada - 1 + opcionesMenu.length) % opcionesMenu.length;
+                break;
+            case KeyEvent.VK_DOWN:
+                opcionSeleccionada = (opcionSeleccionada + 1) % opcionesMenu.length;
+                break;
+            case KeyEvent.VK_ENTER:
+                ejecutarOpcionMenu();
+                break;
+            case KeyEvent.VK_ESCAPE:
+                enPausa = false; // Salir del menú de pausa
+                break;
+        }
+    }
+
+    private void ejecutarOpcionMenu() {
+        switch (opcionSeleccionada) {
+            case 0: // Continuar
+                enPausa = false;
+                break;
+            case 1: // Salir
+                // Detener el juego
+                detener();
+
+                // Cerrar la ventana actual del mapa
+                JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+
+                SwingUtilities.invokeLater(() -> {
+                    currentFrame.dispose();
+
+                    // Mostrar la ventana de inicio guardada
+                    if (ventanaInicio != null) {
+                        ventanaInicio.setVisible(true);
+                        ventanaInicio.toFront();
+                    }
+                });
+                break;
+        }
+    }
+
+    public void setVentanaInicio(JFrame ventanaInicio) {
+        this.ventanaInicio = ventanaInicio;
     }
 
     @Override
     public void run() {
         while (running) {
-            // Actualizar efectos de parpadeo
-            long tiempoActual = System.currentTimeMillis();
-            long tiempoTranscurrido = tiempoActual - tiempoInicio;
+            if (!enPausa) {
+                // Actualizar efectos de parpadeo solo si no está en pausa
+                long tiempoActual = System.currentTimeMillis();
+                long tiempoTranscurrido = tiempoActual - tiempoInicio;
 
-            // Cambiar estado de parpadeo cada 500ms (medio segundo)
-            mostrarPuntos = (tiempoTranscurrido / 500) % 2 == 0;
-
-            // Actualizar lógica del juego aquí
+                // Cambiar estado de parpadeo cada 500ms (medio segundo)
+                mostrarPuntos = (tiempoTranscurrido / 500) % 2 == 0;
+            }
 
             // Repintar
             repaint();
-
-
 
             try {
                 Thread.sleep(16); // ~60 FPS
@@ -478,6 +587,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     public void setHighScore(int score) {
         this.highScore = score;
     }
+
     public void moverPacman(KeyEvent e){
         int x = pacman.getXposcion();
         int y = pacman.getYposcion();
@@ -497,16 +607,20 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 aux=Direction.RIGHT;
                 break;
         }
-
     }
 
-
-    // Eventos de teclado (para futura expansión)
+    // Eventos de teclado
     @Override
     public void keyPressed(KeyEvent e) {
+        if (enPausa) {
+            manejarMenuPausa(e);
+            return;
+        }
+
         switch (e.getKeyCode()) {
             case KeyEvent.VK_ESCAPE:
-                System.exit(0);
+                enPausa = true;
+                opcionSeleccionada = 0; // Resetear selección
                 break;
             case KeyEvent.VK_SPACE:
                 // Pausar/reanudar juego
@@ -526,21 +640,8 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         if (gameThread != null) {
             gameThread.interrupt();
         }
-    }
-
-    // Método main para probar la clase
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Pac-Man");
-            Mapa mapa = new Mapa();
-
-            frame.add(mapa);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            frame.setUndecorated(true); // Pantalla completa sin bordes
-            frame.setVisible(true);
-
-            mapa.requestFocusInWindow();
-        });
+        if (moveTimer != null) {
+            moveTimer.stop();
+        }
     }
 }

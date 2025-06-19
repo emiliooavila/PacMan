@@ -455,7 +455,7 @@ public class PantallaInicio extends JPanel implements KeyListener {
         }
         repaint();
     }
-
+ //metodos PantallaInicio
     private void manejarSeleccion() {
         switch (opcionSeleccionada) {
             case 0: // INICIAR JUEGO
@@ -463,12 +463,10 @@ public class PantallaInicio extends JPanel implements KeyListener {
                 break;
 
             case 1: // JUGADORES
-                System.out.println("Seleccionado: JUGADORES");
-                // Aquí iría la lógica para cambiar a la pantalla de selección de jugadores
+                iniciarJugadores();
                 break;
 
             case 2: // CREDITOS
-                System.out.println("Seleccionado: CREDITOS");
                 iniciarCreditos();
                 break;
 
@@ -482,19 +480,21 @@ public class PantallaInicio extends JPanel implements KeyListener {
         // Crear nueva ventana para el juego
         SwingUtilities.invokeLater(() -> {
             JFrame gameFrame = new JFrame("Pac-Man");
-            // Asumiendo que tienes una clase Mapa
-             Mapa mapa = new Mapa();
+            Mapa mapa = new Mapa();
+
+            // IMPORTANTE: Pasar referencia de la ventana de inicio al mapa
+            mapa.setVentanaInicio((JFrame) SwingUtilities.getWindowAncestor(this));
 
             gameFrame.add(mapa);
-            gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            gameFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             gameFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
             gameFrame.setUndecorated(true);
             gameFrame.setVisible(true);
 
             mapa.requestFocusInWindow();
 
-            // Cerrar la ventana actual de inicio
-            SwingUtilities.getWindowAncestor(this).dispose();
+            // Ocultar la ventana actual de inicio
+            SwingUtilities.getWindowAncestor(this).setVisible(false);
         });
     }
 
@@ -508,6 +508,14 @@ public class PantallaInicio extends JPanel implements KeyListener {
         });
     }
 
+    private void iniciarJugadores(){
+        SwingUtilities.getWindowAncestor(this).setVisible(false);
+
+        // Crear nueva ventana para los jugadores, pasando referencia de esta ventana
+        SwingUtilities.invokeLater(() -> {
+            new Jugadores((JFrame) SwingUtilities.getWindowAncestor(this));
+        });
+    }
     @Override
     public void keyReleased(KeyEvent e) {}
 
