@@ -24,7 +24,8 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private int vidas = 3;
     private boolean running = true;
     private Thread gameThread;
-    private Pacman pacman=new Pacman();
+
+
 
     // Variables para el menú de pausa
     private boolean enPausa = false;
@@ -36,7 +37,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private boolean mostrarPuntos = true;
     enum Direction {UP,DOWN,LEFT,RIGHT,NONE};
     private Direction movment=Direction.RIGHT;
-    private Direction lstmovment=Direction.RIGHT;
+
     Direction aux=movment;
     private Timer moveTimer;
 
@@ -75,6 +76,8 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             {1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1},
             {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
     };
+    private Pacman runPac=new Pacman(laberinto);
+    private Thread pacman=new Thread(runPac);
 
     private void dibujarTubo(Graphics g, int x, int y, int pixelX, int pixelY) {
         Graphics2D g2d = (Graphics2D) g;
@@ -212,92 +215,8 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         // Iniciar el hilo del juego
         gameThread = new Thread(this);
         gameThread.start();
-        moveTimer=new Timer(350, e->{
-            if (enPausa) return; // No mover si está en pausa
+        pacman.start();
 
-            boolean can=false;
-            int x = pacman.getXposcion();
-            int y = pacman.getYposcion();
-            if (aux != movment) {
-                switch (aux) {
-                    case UP:
-                        if (y>0&&laberinto[y-1][x]!=1){
-                            movment=Direction.UP;
-                        }
-                        break;
-                    case DOWN:
-                        if (y<HEIGHT-1&&laberinto[y+1][x]!=1){
-                            movment = Direction.DOWN;
-                        }
-                        break;
-                    case LEFT:
-                        if (x>0&&laberinto[y][x-1]!=1){
-                            movment = Direction.LEFT;
-                        }
-                        break;
-                    case RIGHT:
-                        if(x<WIDTH-1&&laberinto[y][x+1]!=1){
-                            movment = Direction.RIGHT;
-                        }
-                        break;
-                }
-            }
-            x = pacman.getXposcion();
-            y = pacman.getYposcion();
-            switch (movment) {
-                case UP:
-                    if(y>0&&laberinto[y-1][x]!=1){
-
-                        try{
-                            ImageIcon imagen=new ImageIcon(getClass().getResource("PacmangifUP.gif"));
-                            pacman.setImagen(imagen);
-                        }catch(Exception error){
-                            System.err.println("No se pudo imprimir el gif "+error);
-                        }
-                        pacman.moverArriba();
-                    }
-                    break;
-                case DOWN:
-                    if (y<HEIGHT-1&&laberinto[y+1][x]!=1){
-                        try{
-                            ImageIcon imagen=new ImageIcon(getClass().getResource("PacmangifDOWN.gif"));
-                            pacman.setImagen(imagen);
-                        }catch(Exception error){
-                            System.err.println("No se pudo imprimir el gif "+error);
-                        }
-                        pacman.moverAbajo();
-                    }
-                    break;
-                case LEFT:
-                    if(x>0&&laberinto[y][x-1]!=1){
-                        try{
-                            ImageIcon imagen=new ImageIcon(getClass().getResource("PacmangifLEFT.gif"));
-                            pacman.setImagen(imagen);
-                        }catch(Exception error){
-                            System.err.println("No se pudo imprimir el gif "+error);
-                        }
-                        pacman.moverIzquierda();
-                    }
-                    break;
-                case RIGHT:
-                    if (x<WIDTH-1&&laberinto[y][x+1]!=1){
-                        try{
-                            ImageIcon imagen=new ImageIcon(getClass().getResource("Pacmangif.gif"));
-                            pacman.setImagen(imagen);
-                        }catch(Exception error){
-                            System.err.println("No se pudo imprimir el gif "+error);
-                        }
-
-                        pacman.moverDerecha();
-                    }
-                    break;
-                case NONE:
-                    break;
-            }
-
-
-        });
-        moveTimer.start();
     }
 
     @Override
@@ -366,25 +285,25 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                         break;
                     case 4:
 
-                        ImageIcon imagen = pacman.getImagen();
+                        ImageIcon imagen = runPac.getImagen();
 
 
                         int TamPacman=CELL_SIZE/2;
-                        int pacX=(pacman.getXposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
-                        int pacY=(pacman.getYposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
-                        if(laberinto[pacman.getYposcion()][pacman.getXposcion()]==2){
+                        int pacX=(runPac.getXposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
+                        int pacY=(runPac.getYposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
+                        if(laberinto[runPac.getYposcion()][runPac.getXposcion()]==2){
                             //aquí poner la suma de puntaje
-                            laberinto[pacman.getYposcion()][pacman.getXposcion()]=0;
+                            laberinto[runPac.getYposcion()][runPac.getXposcion()]=0;
                         }
-                        else if(laberinto[pacman.getYposcion()][pacman.getXposcion()]==3){
+                        else if(laberinto[runPac.getYposcion()][runPac.getXposcion()]==3){
                             //aquí poner el powerup
-                            laberinto[pacman.getYposcion()][pacman.getXposcion()]=0;
+                            laberinto[runPac.getYposcion()][runPac.getXposcion()]=0;
                         }
-                        if(pacman.getXposcion()==0&&pacman.getYposcion()==14){
-                            pacman.setXposcion(27);
+                        if(runPac.getXposcion()==0&&runPac.getYposcion()==14){
+                            runPac.setXposcion(26);
                         }
-                        else if(pacman.getXposcion()==27&&pacman.getYposcion()==14){
-                            pacman.setXposcion(0);
+                        else if(runPac.getXposcion()==27&&runPac.getYposcion()==14){
+                            runPac.setXposcion(1);
                         }
                         if(imagen!=null){
                             imagen.paintIcon(this, g, pacX, pacY);
@@ -588,26 +507,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         this.highScore = score;
     }
 
-    public void moverPacman(KeyEvent e){
-        int x = pacman.getXposcion();
-        int y = pacman.getYposcion();
-        boolean can=false;
 
-        switch (e.getKeyCode()){
-            case KeyEvent.VK_UP:
-                aux=Direction.UP;
-                break;
-            case KeyEvent.VK_DOWN:
-                aux=Direction.DOWN;
-                break;
-            case KeyEvent.VK_LEFT:
-                aux=Direction.LEFT;
-                break;
-            case KeyEvent.VK_RIGHT:
-                aux=Direction.RIGHT;
-                break;
-        }
-    }
 
     // Eventos de teclado
     @Override
@@ -624,9 +524,13 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 break;
             case KeyEvent.VK_SPACE:
                 // Pausar/reanudar juego
+            default:
+
+                runPac.moverPacman(e); // <<--- Esta línea es clave
+
                 break;
         }
-        moverPacman(e);
+        runPac.setPause(enPausa);
     }
 
     @Override
