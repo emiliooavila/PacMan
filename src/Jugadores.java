@@ -4,15 +4,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Jugadores extends JFrame implements KeyListener {
     private int screenWidth;
     private int screenHeight;
-    private Map<String, Integer> jugadoresPuntajes;
-    private List<String> nombresJugadores;
+    private List<String[]> listaJugadores; // Cambio: usar List<String[]> como en tu ejemplo
+    private int highScoreGlobal = 0; // Cambio: agregar highScoreGlobal
     private String[] opciones = {"NUEVA PARTIDA", "REINICIAR PUNTAJES", "REGRESAR AL MENÚ"};
     private int opcionSeleccionada = 0;
     private boolean mostrarCursor = true;
@@ -42,8 +40,7 @@ public class Jugadores extends JFrame implements KeyListener {
         setFocusable(true);
 
         // Inicializar estructuras de datos
-        jugadoresPuntajes = new HashMap<>();
-        nombresJugadores = new ArrayList<>();
+        listaJugadores = new ArrayList<>();
 
         // Cargar jugadores y puntajes
         cargarJugadores();
@@ -93,144 +90,57 @@ public class Jugadores extends JFrame implements KeyListener {
         setVisible(true);
     }
 
+    // Método simplificado usando BufferedReader como en tu ejemplo
     private void cargarJugadores() {
-        try {
-            // Intentar cargar desde múltiples ubicaciones
-            String[] rutas = {
-                    "/jugadores.txt",           // Desde resources (classpath)
-                    "jugadores.txt",            // Directorio actual
-                    "src/main/resources/jugadores.txt",
-                    "src/resources/jugadores.txt",
-                    "resources/jugadores.txt"
-            };
+        listaJugadores = new ArrayList<>();
+        highScoreGlobal = 0;
 
-            boolean archivoEncontrado = false;
-
-            // Primero intentar desde el classpath (resources)
-            InputStream inputStream = getClass().getResourceAsStream("/jugadores.txt");
-            if (inputStream != null) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-                String linea;
-                while ((linea = reader.readLine()) != null) {
-                    if (!linea.trim().isEmpty()) {
-                        String[] partes = linea.split(",");
-                        if (partes.length == 2) {
-                            String nombre = partes[0].trim();
-                            int puntaje = Integer.parseInt(partes[1].trim());
-                            jugadoresPuntajes.put(nombre, puntaje);
-                            nombresJugadores.add(nombre);
-                        }
-                    }
-                }
-                reader.close();
-                archivoEncontrado = true;
-                System.out.println("Archivo cargado desde resources");
-            }
-
-            // Si no se encontró en resources, intentar desde archivos locales
-            if (!archivoEncontrado) {
-                for (int i = 1; i < rutas.length; i++) { // Empezar desde índice 1 para saltar el classpath
+        try (BufferedReader br = new BufferedReader(new FileReader("jugadores.txt"))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] partes = linea.split(",");
+                if (partes.length == 2) {
+                    String nombre = partes[0].trim();
                     try {
-                        File archivo = new File(rutas[i]);
-                        if (archivo.exists()) {
-                            BufferedReader reader = new BufferedReader(new FileReader(archivo));
-                            String linea;
-                            while ((linea = reader.readLine()) != null) {
-                                if (!linea.trim().isEmpty()) {
-                                    String[] partes = linea.split(",");
-                                    if (partes.length == 2) {
-                                        String nombre = partes[0].trim();
-                                        int puntaje = Integer.parseInt(partes[1].trim());
-                                        jugadoresPuntajes.put(nombre, puntaje);
-                                        nombresJugadores.add(nombre);
-                                    }
-                                }
-                            }
-                            reader.close();
-                            archivoEncontrado = true;
-                            System.out.println("Archivo cargado desde: " + archivo.getAbsolutePath());
-                            break;
+                        int puntaje = Integer.parseInt(partes[1].trim());
+                        listaJugadores.add(new String[]{nombre, String.valueOf(puntaje)});
+                        if (puntaje > highScoreGlobal) {
+                            highScoreGlobal = puntaje;
                         }
-                    } catch (IOException e) {
-                        continue; // Probar siguiente ruta
+                    } catch (NumberFormatException e) {
+                        // Ignorar líneas con formato incorrecto
                     }
                 }
             }
-
-            // Si no se encontró ningún archivo, crear jugadores por defecto
-            if (!archivoEncontrado) {
-                crearJugadoresPorDefecto();
-                guardarJugadores();
-                System.out.println("Creado archivo con jugadores por defecto");
-            }
-
-        } catch (IOException | NumberFormatException e) {
-            // Si hay error, crear jugadores por defecto
+        } catch (IOException e) {
+            System.out.println("Archivo jugadores.txt no encontrado, creando uno nuevo.");
             crearJugadoresPorDefecto();
-            guardarJugadores();
-            System.err.println("Error al cargar jugadores, usando valores por defecto: " + e.getMessage());
         }
 
         // Si no se cargaron jugadores, crear los por defecto
-        if (jugadoresPuntajes.isEmpty()) {
+        if (listaJugadores.isEmpty()) {
             crearJugadoresPorDefecto();
-            guardarJugadores();
         }
     }
 
     private void crearJugadoresPorDefecto() {
         String[] nombres = {"Emilio", "Diego", "Rey", "Maxy"};
-        jugadoresPuntajes.clear();
-        nombresJugadores.clear();
+        listaJugadores.clear();
 
         for (String nombre : nombres) {
-            jugadoresPuntajes.put(nombre, 0);
-            nombresJugadores.add(nombre);
+            listaJugadores.add(new String[]{nombre, "0"});
         }
+        guardarJugadores();
     }
 
+    // Método simplificado para guardar usando PrintWriter como en tu ejemplo
     private void guardarJugadores() {
-        try {
-            // Intentar guardar en múltiples ubicaciones para asegurar la persistencia
-            String[] rutas = {
-                    "src/main/resources/jugadores.txt",
-                    "src/resources/jugadores.txt",
-                    "jugadores.txt",
-                    "resources/jugadores.txt"
-            };
-
-            boolean guardadoExitoso = false;
-
-            for (String ruta : rutas) {
-                try {
-                    File archivo = new File(ruta);
-
-                    // Crear directorios padre si no existen
-                    if (archivo.getParentFile() != null) {
-                        archivo.getParentFile().mkdirs();
-                    }
-
-                    FileWriter writer = new FileWriter(archivo);
-                    for (String nombre : nombresJugadores) {
-                        writer.write(nombre + "," + jugadoresPuntajes.get(nombre) + "\n");
-                    }
-                    writer.close();
-
-                    guardadoExitoso = true;
-                    System.out.println("Archivo guardado exitosamente en: " + archivo.getAbsolutePath());
-
-                } catch (IOException e) {
-                    // Continuar con la siguiente ruta si esta falla
-                    continue;
-                }
+        try (PrintWriter pw = new PrintWriter(new FileWriter("jugadores.txt"))) {
+            for (String[] jugador : listaJugadores) {
+                pw.println(jugador[0] + ", " + jugador[1]);
             }
-
-            if (!guardadoExitoso) {
-                System.err.println("No se pudo guardar el archivo en ninguna ubicación");
-            }
-
-        } catch (Exception e) {
-            System.err.println("Error general al guardar jugadores: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Error al guardar jugadores: " + e.getMessage());
         }
     }
 
@@ -280,7 +190,7 @@ public class Jugadores extends JFrame implements KeyListener {
         int marcoX = screenWidth / 4;
         int marcoY = tablaInicioY + 40;
         int marcoWidth = screenWidth / 2;
-        int marcoHeight = nombresJugadores.size() * 60 + 60;
+        int marcoHeight = listaJugadores.size() * 60 + 60;
 
         if (mostrarMarco) {
             g.setColor(Color.YELLOW);
@@ -310,9 +220,10 @@ public class Jugadores extends JFrame implements KeyListener {
         g.setFont(dataFont);
 
         int currentY = headerY + 45;
-        for (int i = 0; i < nombresJugadores.size(); i++) {
-            String nombre = nombresJugadores.get(i);
-            int puntaje = jugadoresPuntajes.get(nombre);
+        for (int i = 0; i < listaJugadores.size(); i++) {
+            String[] jugador = listaJugadores.get(i);
+            String nombre = jugador[0];
+            String puntaje = jugador[1];
 
             // Resaltar jugador seleccionado
             if (i == jugadorActualIndex) {
@@ -331,7 +242,7 @@ public class Jugadores extends JFrame implements KeyListener {
             g.drawString(nombre, nombreX, currentY);
 
             // Dibujar puntaje
-            g.drawString(String.valueOf(puntaje), puntajeX, currentY);
+            g.drawString(puntaje, puntajeX, currentY);
 
             currentY += 50;
         }
@@ -425,14 +336,34 @@ public class Jugadores extends JFrame implements KeyListener {
         g.drawString(instruccion, instX, instY);
     }
 
-    // Método para actualizar el puntaje de un jugador
+    // Método actualizado para usar la nueva estructura de datos
     public void actualizarPuntaje(String nombreJugador, int nuevoPuntaje) {
-        if (jugadoresPuntajes.containsKey(nombreJugador)) {
-            if (nuevoPuntaje > jugadoresPuntajes.get(nombreJugador)) {
-                jugadoresPuntajes.put(nombreJugador, nuevoPuntaje);
-                guardarJugadores();
+        boolean jugadorExistente = false;
+
+        // Actualizar puntaje si el jugador ya existe
+        for (String[] jugador : listaJugadores) {
+            if (jugador[0].equals(nombreJugador)) {
+                int puntajeActual = Integer.parseInt(jugador[1]);
+                if (nuevoPuntaje > puntajeActual) {
+                    jugador[1] = String.valueOf(nuevoPuntaje);
+                    if (nuevoPuntaje > highScoreGlobal) {
+                        highScoreGlobal = nuevoPuntaje;
+                    }
+                }
+                jugadorExistente = true;
+                break;
             }
         }
+
+        // Agregar nuevo jugador si no existe
+        if (!jugadorExistente) {
+            listaJugadores.add(new String[]{nombreJugador, String.valueOf(nuevoPuntaje)});
+            if (nuevoPuntaje > highScoreGlobal) {
+                highScoreGlobal = nuevoPuntaje;
+            }
+        }
+
+        guardarJugadores();
     }
 
     // Método para obtener el jugador seleccionado
@@ -440,11 +371,17 @@ public class Jugadores extends JFrame implements KeyListener {
         return jugadorSeleccionado;
     }
 
+    // Método para obtener el high score global
+    public int getHighScoreGlobal() {
+        return highScoreGlobal;
+    }
+
     // Método para reiniciar todos los puntajes
     private void reiniciarPuntajes() {
-        for (String nombre : nombresJugadores) {
-            jugadoresPuntajes.put(nombre, 0);
+        for (String[] jugador : listaJugadores) {
+            jugador[1] = "0";
         }
+        highScoreGlobal = 0;
         guardarJugadores();
         repaint();
     }
@@ -464,12 +401,12 @@ public class Jugadores extends JFrame implements KeyListener {
 
             case KeyEvent.VK_UP:
                 // Up: navegar entre jugadores hacia arriba
-                jugadorActualIndex = (jugadorActualIndex - 1 + nombresJugadores.size()) % nombresJugadores.size();
+                jugadorActualIndex = (jugadorActualIndex - 1 + listaJugadores.size()) % listaJugadores.size();
                 break;
 
             case KeyEvent.VK_DOWN:
                 // Down: navegar entre jugadores hacia abajo
-                jugadorActualIndex = (jugadorActualIndex + 1) % nombresJugadores.size();
+                jugadorActualIndex = (jugadorActualIndex + 1) % listaJugadores.size();
                 break;
 
             case KeyEvent.VK_ENTER:

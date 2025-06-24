@@ -4,7 +4,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.geom.RoundRectangle2D;
 
-public class Mapa extends JPanel implements Runnable, KeyListener {
+public class Mapa3 extends JPanel implements Runnable, KeyListener {
 
     // Constantes del mapa
     public static final int CELL_SIZE = 20;
@@ -33,10 +33,13 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     // Variables para efectos
     private long tiempoInicio;
     private boolean mostrarPuntos = true;
-    enum Direction {UP,DOWN,LEFT,RIGHT,NONE};
-    private Direction movment=Direction.RIGHT;
 
-    Direction aux=movment;
+    enum Direction {UP, DOWN, LEFT, RIGHT, NONE}
+
+    ;
+    private Direction movment = Direction.RIGHT;
+
+    Direction aux = movment;
     private Timer moveTimer;
 
     // Variables del sistema de jugadores
@@ -52,51 +55,51 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     // Matriz del laberinto
     // 0 = espacio vacío, 1 = pared, 2 = punto, 3 = power pellet
     private int[][] laberinto = {
-            {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-            {1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1},
-            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
-            {1,3,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,3,1},
-            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
-            {1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1},
-            {1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1},
-            {1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1},
-            {1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1},
-            {1,1,1,1,1,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,1,1,1,1,1},
-            {0,0,0,0,0,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,0,0,0,0,0},
-            {0,0,0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,0,0,0,0,0},
-            {0,0,0,0,0,1,2,1,1,0,1,1,1,0,0,1,1,1,0,1,1,2,1,0,0,0,0,0},
-            {1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1},
-            {0,0,0,0,0,0,2,0,0,0,1,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0},
-            {1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1},
-            {0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0},
-            {0,0,0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,0,0,0,0,0},
-            {0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0},
-            {1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1},
-            {1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1},
-            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
-            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
-            {1,3,2,2,1,1,2,2,2,2,2,2,2,0,4,2,2,2,2,2,2,2,1,1,2,2,3,1},
-            {1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1},
-            {1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1},
-            {1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1},
-            {1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1},
-            {1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1},
-            {1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1},
-            {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
+            {1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1},
+            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
+            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+            {1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1},
+            {1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1},
+            {1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1},
+            {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+            {0, 0, 0, 0, 0, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+            {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+            {0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0},
+            {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
+            {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
+            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
+            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
+            {1, 3, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 4, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 3, 1},
+            {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
+            {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
+            {1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1},
+            {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
+            {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
+            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
-    private Pacman runPac=new Pacman(laberinto);
-    private Thread pacman=new Thread(runPac);
+    private Pacman runPac = new Pacman(laberinto);
+    private Thread pacman = new Thread(runPac);
 
     private void dibujarTubo(Graphics g, int x, int y, int pixelX, int pixelY) {
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setColor(new Color(0, 0, 255));
+        g2d.setColor(new Color(0, 255, 0)); // CAMBIO: Color verde en lugar de azul o rojo
         g2d.setStroke(new BasicStroke(2));
 
         // Verificar bloques adyacentes
-        boolean arriba = (y > 0) && (laberinto[y-1][x] == 1);
-        boolean abajo = (y < HEIGHT-1) && (laberinto[y+1][x] == 1);
-        boolean izquierda = (x > 0) && (laberinto[y][x-1] == 1);
-        boolean derecha = (x < WIDTH-1) && (laberinto[y][x+1] == 1);
+        boolean arriba = (y > 0) && (laberinto[y - 1][x] == 1);
+        boolean abajo = (y < HEIGHT - 1) && (laberinto[y + 1][x] == 1);
+        boolean izquierda = (x > 0) && (laberinto[y][x - 1] == 1);
+        boolean derecha = (x < WIDTH - 1) && (laberinto[y][x + 1] == 1);
 
         int margin = 1;
         int arcSize = CELL_SIZE / 4;
@@ -123,15 +126,15 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             if (!izquierda && !derecha) {
                 // Borde superior completamente redondeado
                 g2d.drawArc(x1, y1, arcSize, arcSize, 90, 90); // esquina sup-izq
-                g2d.drawLine(x1 + arcSize/2, y1, x2 - arcSize/2, y1); // línea superior
+                g2d.drawLine(x1 + arcSize / 2, y1, x2 - arcSize / 2, y1); // línea superior
                 g2d.drawArc(x2 - arcSize, y1, arcSize, arcSize, 0, 90); // esquina sup-der
             } else if (!izquierda) {
                 // Redondeado solo en esquina superior izquierda
                 g2d.drawArc(x1, y1, arcSize, arcSize, 90, 90);
-                g2d.drawLine(x1 + arcSize/2, y1, x2, y1);
+                g2d.drawLine(x1 + arcSize / 2, y1, x2, y1);
             } else if (!derecha) {
                 // Redondeado solo en esquina superior derecha
-                g2d.drawLine(x1, y1, x2 - arcSize/2, y1);
+                g2d.drawLine(x1, y1, x2 - arcSize / 2, y1);
                 g2d.drawArc(x2 - arcSize, y1, arcSize, arcSize, 0, 90);
             } else {
                 // Sin redondeo si hay conexiones a ambos lados
@@ -144,15 +147,15 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             if (!izquierda && !derecha) {
                 // Borde inferior completamente redondeado
                 g2d.drawArc(x1, y2 - arcSize, arcSize, arcSize, 180, 90); // esquina inf-izq
-                g2d.drawLine(x1 + arcSize/2, y2, x2 - arcSize/2, y2); // línea inferior
+                g2d.drawLine(x1 + arcSize / 2, y2, x2 - arcSize / 2, y2); // línea inferior
                 g2d.drawArc(x2 - arcSize, y2 - arcSize, arcSize, arcSize, 270, 90); // esquina inf-der
             } else if (!izquierda) {
                 // Redondeado solo en esquina inferior izquierda
                 g2d.drawArc(x1, y2 - arcSize, arcSize, arcSize, 180, 90);
-                g2d.drawLine(x1 + arcSize/2, y2, x2, y2);
+                g2d.drawLine(x1 + arcSize / 2, y2, x2, y2);
             } else if (!derecha) {
                 // Redondeado solo en esquina inferior derecha
-                g2d.drawLine(x1, y2, x2 - arcSize/2, y2);
+                g2d.drawLine(x1, y2, x2 - arcSize / 2, y2);
                 g2d.drawArc(x2 - arcSize, y2 - arcSize, arcSize, arcSize, 270, 90);
             } else {
                 // Sin redondeo si hay conexiones a ambos lados
@@ -166,10 +169,10 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 // Ya dibujado en las esquinas superiores/inferiores
             } else if (!arriba) {
                 // Desde esquina redondeada hacia abajo
-                g2d.drawLine(x1, y1 + arcSize/2, x1, y2);
+                g2d.drawLine(x1, y1 + arcSize / 2, x1, y2);
             } else if (!abajo) {
                 // Desde arriba hacia esquina redondeada
-                g2d.drawLine(x1, y1, x1, y2 - arcSize/2);
+                g2d.drawLine(x1, y1, x1, y2 - arcSize / 2);
             } else {
                 // Línea completa si hay conexiones arriba y abajo
                 g2d.drawLine(x1, y1, x1, y2);
@@ -182,10 +185,10 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 // Ya dibujado en las esquinas superiores/inferiores
             } else if (!arriba) {
                 // Desde esquina redondeada hacia abajo
-                g2d.drawLine(x2, y1 + arcSize/2, x2, y2);
+                g2d.drawLine(x2, y1 + arcSize / 2, x2, y2);
             } else if (!abajo) {
                 // Desde arriba hacia esquina redondeada
-                g2d.drawLine(x2, y1, x2, y2 - arcSize/2);
+                g2d.drawLine(x2, y1, x2, y2 - arcSize / 2);
             } else {
                 // Línea completa si hay conexiones arriba y abajo
                 g2d.drawLine(x2, y1, x2, y2);
@@ -194,8 +197,11 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
 
         // Restaurar stroke normal
         g2d.setStroke(new BasicStroke(1));
-    };
+    }
 
+    ;
+
+    // Método para contar puntos iniciales
     private void contarPuntosIniciales() {
         puntosRestantes = 0;
         for (int y = 0; y < HEIGHT; y++) {
@@ -207,7 +213,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         }
     }
 
-    public Mapa(String jugador) {
+    public Mapa3(String jugador) {
         this.jugadorActual = jugador;
         cargarJugadores();
 
@@ -241,7 +247,6 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         gameThread = new Thread(this);
         gameThread.start();
         pacman.start();
-
     }
 
     @Override
@@ -282,7 +287,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 int pixelY = y * CELL_SIZE;
 
                 switch (cellValue) {
-                    case 1: // Paredes (bordes azules con efecto de tubo)
+                    case 1: // Paredes (bordes verdes con efecto de tubo)
                         dibujarTubo(g, x, y, pixelX, pixelY);
                         break;
 
@@ -292,11 +297,10 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                         int dotX = pixelX + CELL_SIZE / 2 - dotSize / 2;
                         int dotY = pixelY + CELL_SIZE / 2 - dotSize / 2;
                         g.fillOval(dotX, dotY, dotSize, dotSize);
-
                         break;
 
                     case 3: // Power Pellets (rosa grande)
-                        if(this.mostrarPuntos){
+                        if (this.mostrarPuntos) {
                             g.setColor(new Color(255, 184, 255));
                             int pelletSize = CELL_SIZE / 2;
                             int pelletX = pixelX + CELL_SIZE / 2 - pelletSize / 2;
@@ -305,17 +309,16 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
 
                             // Efecto de brillo
                             g.setColor(Color.WHITE);
-                            g.fillOval(pelletX + pelletSize/4, pelletY + pelletSize/4, pelletSize/4, pelletSize/4);
+                            g.fillOval(pelletX + pelletSize / 4, pelletY + pelletSize / 4, pelletSize / 4, pelletSize / 4);
                         }
                         break;
-
                     case 4:
                         ImageIcon imagen = runPac.getImagen();
-                        int TamPacman = CELL_SIZE/2;
-                        int pacX = (runPac.getXposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
-                        int pacY = (runPac.getYposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
+                        int TamPacman = CELL_SIZE / 2;
+                        int pacX = (runPac.getXposcion() * CELL_SIZE) + (CELL_SIZE - TamPacman) / 2;
+                        int pacY = (runPac.getYposcion() * CELL_SIZE) + (CELL_SIZE - TamPacman) / 2;
 
-                        if(laberinto[runPac.getYposcion()][runPac.getXposcion()] == 2){
+                        if (laberinto[runPac.getYposcion()][runPac.getXposcion()] == 2) {
                             // Sumar puntos y reducir contador
                             incrementarScore(5);
                             puntajeNivel += 5;
@@ -326,22 +329,20 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                             if (puntosRestantes <= 0) {
                                 nivelCompletado = true;
                             }
-                        }
-                        else if(laberinto[runPac.getYposcion()][runPac.getXposcion()] == 3){
-                            // Power pellet - puedes agregar puntos extra aquí si quieres
-                            incrementarScore(50); // Power pellets valen más
+                        } else if (laberinto[runPac.getYposcion()][runPac.getXposcion()] == 3) {
+                            // Power pellet - puntos extra
+                            incrementarScore(50);
                             laberinto[runPac.getYposcion()][runPac.getXposcion()] = 0;
                         }
 
                         // Lógica del túnel
-                        if(runPac.getXposcion() == 0 && runPac.getYposcion() == 14){
+                        if (runPac.getXposcion() == 0 && runPac.getYposcion() == 14) {
                             runPac.setXposcion(26);
-                        }
-                        else if(runPac.getXposcion() == 27 && runPac.getYposcion() == 14){
+                        } else if (runPac.getXposcion() == 27 && runPac.getYposcion() == 14) {
                             runPac.setXposcion(1);
                         }
 
-                        if(imagen != null){
+                        if (imagen != null) {
                             imagen.paintIcon(this, g, pacX, pacY);
                         }
                         break;
@@ -450,7 +451,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         }
     }
 
-    //metodos Mapa
+    //metodos Mapa3
     private void manejarMenuPausa(KeyEvent e) {
         switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
@@ -599,7 +600,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         Font nivelFont = new Font("Arial", Font.BOLD, 18);
         g.setFont(nivelFont);
         g.setColor(Color.CYAN);
-        g.drawString("NIVEL 1", screenWidth - 250, screenHeight - 100);
+        g.drawString("NIVEL 3", screenWidth - 250, screenHeight - 100);
     }
 
     @Override
@@ -613,7 +614,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
 
                 // Verificar si el nivel está completado
                 if (nivelCompletado) {
-                    cambiarANivel2();
+                    regresarInicio();
                 }
             }
 
@@ -638,6 +639,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             vidas--;
         }
     }
+
     public void agregarVida() {
         vidas++;
     }
@@ -657,7 +659,6 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     public void setHighScore(int score) {
         this.highScore = score;
     }
-
 
 
     // Eventos de teclado
@@ -684,10 +685,12 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {}
+    public void keyReleased(KeyEvent e) {
+    }
 
     @Override
-    public void keyTyped(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) {
+    }
 
     public void detener() {
         guardarJugador(); // Guardar puntaje antes de salir
@@ -701,7 +704,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         }
     }
 
-    private void cambiarANivel2() {
+    private void regresarInicio() {
         // Detener el juego actual
         detener();
 
@@ -720,12 +723,12 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                     g.setColor(Color.YELLOW);
                     g.setFont(new Font("Arial", Font.BOLD, 48));
                     FontMetrics fm = g.getFontMetrics();
-                    String texto = "¡NIVEL COMPLETADO!";
+                    String texto = "¡JUEGO COMPLETADO!";
                     int x = (getWidth() - fm.stringWidth(texto)) / 2;
                     int y = getHeight() / 2 - 50;
                     g.drawString(texto, x, y);
 
-                    texto = "NIVEL 2";
+                    texto = "REGRESANDO AL MENÚ";
                     x = (getWidth() - fm.stringWidth(texto)) / 2;
                     y = getHeight() / 2 + 50;
                     g.drawString(texto, x, y);
@@ -736,26 +739,19 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
             currentFrame.revalidate();
             currentFrame.repaint();
 
-            // Después de 2 segundos, cambiar al nivel 2
+            // Después de 2 segundos, regresar a PantallaInicio
             Timer transicionTimer = new Timer(2000, e -> {
                 currentFrame.dispose();
 
-                // Crear nueva ventana con Mapa2
-                JFrame frameNivel2 = new JFrame("Pac-Man - Nivel 2");
-                Mapa2 mapa2 = new Mapa2(jugadorActual);
-                mapa2.setHighScore(highScore); // Mantener puntaje
-                mapa2.setVentanaInicio(ventanaInicio);
-
-                frameNivel2.add(mapa2);
-                frameNivel2.setUndecorated(true);
-                frameNivel2.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                frameNivel2.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frameNivel2.setVisible(true);
-
-                mapa2.requestFocus();
+                // Mostrar la ventana de inicio guardada
+                if (ventanaInicio != null) {
+                    ventanaInicio.setVisible(true);
+                    ventanaInicio.toFront();
+                }
             });
             transicionTimer.setRepeats(false);
             transicionTimer.start();
         });
     }
 }
+

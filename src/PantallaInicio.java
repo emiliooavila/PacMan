@@ -3,6 +3,8 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.geom.RoundRectangle2D;
+import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
 
 public class PantallaInicio extends JPanel implements KeyListener {
 
@@ -29,6 +31,11 @@ public class PantallaInicio extends JPanel implements KeyListener {
 
     //Variable para la música
     private Audio reproductor;
+
+    // Variables para el sistema de jugadores
+    private String jugadorActual = "";
+    private boolean solicitandoJugador = false;
+    private StringBuilder inputBuffer = new StringBuilder();
 
     // Matriz simplificada que solo rodea el área de texto
     private int[][] laberintoMarco = {
@@ -258,6 +265,11 @@ public class PantallaInicio extends JPanel implements KeyListener {
 
         // Dibujar elementos decorativos (fantasmas pequeños)
         dibujarFantasmasDecorativos(g2d);
+
+        // Dibujar solicitud de jugador si está activa
+        if (solicitandoJugador) {
+            dibujarSolicitudJugador(g2d);
+        }
     }
 
     private void dibujarMarcoLaberinto(Graphics2D g) {
@@ -434,32 +446,11 @@ public class PantallaInicio extends JPanel implements KeyListener {
         }
     }
 
-    @Override
-    public void keyPressed(KeyEvent e) {
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                opcionSeleccionada = (opcionSeleccionada - 1 + opciones.length) % opciones.length;
-                break;
-
-            case KeyEvent.VK_DOWN:
-                opcionSeleccionada = (opcionSeleccionada + 1) % opciones.length;
-                break;
-
-            case KeyEvent.VK_ENTER:
-                manejarSeleccion();
-                break;
-
-            case KeyEvent.VK_ESCAPE:
-                System.exit(0);
-                break;
-        }
-        repaint();
-    }
- //metodos PantallaInicio
+    //metodos PantallaInicio
     private void manejarSeleccion() {
         switch (opcionSeleccionada) {
-            case 0: // INICIAR JUEGO
-                iniciarJuego();
+            case 0: // SOLICITAR Y SINCRONIZAR NOMBRE
+                solicitarNombreJugador();
                 break;
 
             case 1: // JUGADORES
@@ -480,7 +471,7 @@ public class PantallaInicio extends JPanel implements KeyListener {
         // Crear nueva ventana para el juego
         SwingUtilities.invokeLater(() -> {
             JFrame gameFrame = new JFrame("Pac-Man");
-            Mapa mapa = new Mapa();
+            Mapa mapa = new Mapa(jugadorActual);
 
             // IMPORTANTE: Pasar referencia de la ventana de inicio al mapa
             mapa.setVentanaInicio((JFrame) SwingUtilities.getWindowAncestor(this));
@@ -496,6 +487,52 @@ public class PantallaInicio extends JPanel implements KeyListener {
             // Ocultar la ventana actual de inicio
             SwingUtilities.getWindowAncestor(this).setVisible(false);
         });
+    }
+
+    private void solicitarNombreJugador() {
+        solicitandoJugador = true;
+        inputBuffer.setLength(0);
+        repaint();
+    }
+
+    private void dibujarSolicitudJugador(Graphics2D g) {
+        // Fondo semi-transparente
+        g.setColor(new Color(0, 0, 0, 200));
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Configurar fuente
+        Font tituloFont = new Font("Arial", Font.BOLD, (int)(screenWidth * 0.04));
+        Font textoFont = new Font("Arial", Font.PLAIN, (int)(screenWidth * 0.025));
+
+        // Título
+        g.setFont(tituloFont);
+        g.setColor(Color.YELLOW);
+        FontMetrics fm = g.getFontMetrics();
+        String titulo = "INGRESA TU NOMBRE";
+        int titleWidth = fm.stringWidth(titulo);
+        g.drawString(titulo, (screenWidth - titleWidth) / 2, screenHeight / 2 - 50);
+
+        // Campo de entrada
+        g.setFont(textoFont);
+        fm = g.getFontMetrics();
+        String entrada = inputBuffer.toString() + "_";
+        int entradaWidth = fm.stringWidth(entrada);
+        g.setColor(Color.WHITE);
+        g.drawString(entrada, (screenWidth - entradaWidth) / 2, screenHeight / 2);
+
+        // Instrucciones
+        g.setColor(Color.GRAY);
+        String instruccion = "PRESIONA ENTER PARA CONFIRMAR";
+        int instrWidth = fm.stringWidth(instruccion);
+        g.drawString(instruccion, (screenWidth - instrWidth) / 2, screenHeight / 2 + 50);
+    }
+
+    private void procesarEntradaJugador() {
+        jugadorActual = inputBuffer.toString().trim();
+        if (!jugadorActual.isEmpty()) {
+            solicitandoJugador = false;
+            iniciarJuego();
+        }
     }
 
     private void iniciarCreditos() {
@@ -516,13 +553,56 @@ public class PantallaInicio extends JPanel implements KeyListener {
             new Jugadores((JFrame) SwingUtilities.getWindowAncestor(this));
         });
     }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (solicitandoJugador) {
+            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                procesarEntradaJugador();
+            } else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+                if (inputBuffer.length() > 0) {
+                    inputBuffer.deleteCharAt(inputBuffer.length() - 1);
+                }
+            } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                solicitandoJugador = false;
+            } else {
+                char c = e.getKeyChar();
+                if (Character.isLetterOrDigit(c) || c == ' ') {
+                    if (inputBuffer.length() < 15) {
+                        inputBuffer.append(Character.toUpperCase(c));
+                    }
+                }
+            }
+            repaint();
+            return;
+        }
+
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                opcionSeleccionada = (opcionSeleccionada - 1 + opciones.length) % opciones.length;
+                break;
+
+            case KeyEvent.VK_DOWN:
+                opcionSeleccionada = (opcionSeleccionada + 1) % opciones.length;
+                break;
+
+            case KeyEvent.VK_ENTER:
+                manejarSeleccion();
+                break;
+
+            case KeyEvent.VK_ESCAPE:
+                System.exit(0);
+                break;
+        }
+        repaint();
+    }
+
     @Override
     public void keyReleased(KeyEvent e) {}
 
     @Override
     public void keyTyped(KeyEvent e) {}
 
-    // Método main para probar la pantalla de inicio
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Pac-Man - Pantalla de Inicio");
@@ -538,3 +618,4 @@ public class PantallaInicio extends JPanel implements KeyListener {
         });
     }
 }
+
