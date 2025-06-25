@@ -2,9 +2,6 @@ import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-
-
-
 public class Pacman implements Runnable, KeyListener {
 
     private ImageIcon imagen;
