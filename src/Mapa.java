@@ -49,6 +49,13 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private int puntajeNivel = 0;
     private boolean nivelCompletado = false;
 
+    //Fantasmas
+    private Clyde clyde;
+    private Blinky blinky;
+    private Pinky pinky;
+    private Inky inky;
+    private Pikzy pikzy;
+
     // Matriz del laberinto
     // 0 = espacio vacío, 1 = pared, 2 = punto, 3 = power pellet
     private int[][] laberinto = {
@@ -242,6 +249,17 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         gameThread.start();
         pacman.start();
 
+        clyde = new Clyde(runPac, laberinto);
+        new Thread(clyde).start();
+        blinky = new Blinky(runPac, laberinto);
+        new Thread(blinky).start();
+        pinky = new Pinky(runPac, laberinto);
+        new Thread(pinky).start();
+        inky = new Inky(runPac, laberinto);
+        new Thread(inky).start();
+        pikzy = new Pikzy(runPac, laberinto);
+        new Thread(pikzy).start();
+
     }
 
     @Override
@@ -261,6 +279,12 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
 
         // Dibujar el mapa
         dibujarMapa(g2d);
+
+        clyde.dibujarClyde(g2d);
+        blinky.dibujarBlinky(g2d);
+        pinky.dibujarPinky(g2d);
+        inky.dibujarInky(g2d);
+        pikzy.dibujarPikzy(g2d);
 
         // Resetear transformación para UI
         g2d.setTransform(new java.awt.geom.AffineTransform());
