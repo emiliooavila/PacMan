@@ -366,7 +366,8 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                         }
 
                         if(imagen != null){
-                            imagen.paintIcon(this, g, pacX, pacY);
+                            //imagen.paintIcon(this, g, pacX, pacY);
+                            g.drawImage(imagen.getImage(), runPac.getXposcion() * 20, runPac.getYposcion() * 20, 20, 20, null);
                         }
                         break;
 
