@@ -90,7 +90,7 @@ public class Pikzy implements Runnable{
 
         for (int y = 0; y < this.mapita.length; y++) {
             for (int x = 0; x < this.mapita[0].length; x++) {
-                if (this.mapita[y][x] != 1) {
+                if (this.mapita[y][x] != 1 && this.mapita[y][x] != 5) {
                     String nodo = nodoId(x, y);
                     camino.addVertex(nodo);
                 }
@@ -103,11 +103,11 @@ public class Pikzy implements Runnable{
 
                 String actual = nodoId(x, y);
 
-                if (x + 1 < mapita[0].length && mapita[y][x + 1] != 1) {
+                if (x + 1 < mapita[0].length && mapita[y][x + 1] != 1 && this.mapita[y][x+1] != 5) {
                     String derecha = nodoId(x + 1, y);
                     camino.addEdge(actual, derecha);
                 }
-                if (y + 1 < mapita.length && mapita[y + 1][x] != 1) {
+                if (y + 1 < mapita.length && mapita[y + 1][x] != 1 && this.mapita[y+1][x] != 5) {
                     String abajo = nodoId(x, y + 1);
                     camino.addEdge(actual, abajo);
                 }
