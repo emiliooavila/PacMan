@@ -72,60 +72,60 @@ public class PantallaInicio extends JPanel implements KeyListener {
             {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
     };
 
-    public PantallaInicio() {
-        // Validar dimensiones de la matriz
-        System.out.println("Dimensiones de la matriz: " + laberintoMarco.length + " filas x " + laberintoMarco[0].length + " columnas");
-        System.out.println("Constantes: HEIGHT=" + HEIGHT + ", WIDTH=" + WIDTH);
+        public PantallaInicio() {
+            // Validar dimensiones de la matriz
+            System.out.println("Dimensiones de la matriz: " + laberintoMarco.length + " filas x " + laberintoMarco[0].length + " columnas");
+            System.out.println("Constantes: HEIGHT=" + HEIGHT + ", WIDTH=" + WIDTH);
 
-        // Configurar la pantalla completa
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        screenWidth = gd.getDisplayMode().getWidth();
-        screenHeight = gd.getDisplayMode().getHeight();
+            // Configurar la pantalla completa
+            GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+            screenWidth = gd.getDisplayMode().getWidth();
+            screenHeight = gd.getDisplayMode().getHeight();
 
-        // Calcular escala para ajustar el mapa a la pantalla
-        int mapPixelWidth = WIDTH * CELL_SIZE;
-        int mapPixelHeight = HEIGHT * CELL_SIZE;
+            // Calcular escala para ajustar el mapa a la pantalla
+            int mapPixelWidth = WIDTH * CELL_SIZE;
+            int mapPixelHeight = HEIGHT * CELL_SIZE;
 
-        scaleX = (double) screenWidth / mapPixelWidth;
-        scaleY = (double) screenHeight / mapPixelHeight;
+            scaleX = (double) screenWidth / mapPixelWidth;
+            scaleY = (double) screenHeight / mapPixelHeight;
 
-        // Usar la escala menor para mantener proporciones
-        double scale = Math.min(scaleX, scaleY);
-        scaleX = scaleY = scale;
+            // Usar la escala menor para mantener proporciones
+            double scale = Math.min(scaleX, scaleY);
+            scaleX = scaleY = scale;
 
-        setBackground(Color.BLACK);
-        setFocusable(true);
-        addKeyListener(this);
+            setBackground(Color.BLACK);
+            setFocusable(true);
+            addKeyListener(this);
 
-        // Inicializar tiempo para efectos
-        tiempoInicio = System.currentTimeMillis();
+            // Inicializar tiempo para efectos
+            tiempoInicio = System.currentTimeMillis();
 
-        // Inicializar posiciones de fantasmas
-        inicializarFantasmas();
+            // Inicializar posiciones de fantasmas
+            inicializarFantasmas();
 
-        // Iniciar animación
-        Timer timer = new Timer(16, e -> {
-            // Actualizar efectos de parpadeo
-            long tiempoActual = System.currentTimeMillis();
-            long tiempoTranscurrido = tiempoActual - tiempoInicio;
+            // Iniciar animación
+            Timer timer = new Timer(16, e -> {
+                // Actualizar efectos de parpadeo
+                long tiempoActual = System.currentTimeMillis();
+                long tiempoTranscurrido = tiempoActual - tiempoInicio;
 
-            // Cambiar estado de parpadeo cada 500ms
-            mostrarCursor = (tiempoTranscurrido / 500) % 2 == 0;
+                // Cambiar estado de parpadeo cada 500ms
+                mostrarCursor = (tiempoTranscurrido / 500) % 2 == 0;
 
-            // Cambiar estado de parpadeo de la matriz cada 800ms para un efecto más lento
-            mostrarMatriz = (tiempoTranscurrido / 800) % 2 == 0;
+                // Cambiar estado de parpadeo de la matriz cada 800ms para un efecto más lento
+                mostrarMatriz = (tiempoTranscurrido / 800) % 2 == 0;
 
-            // Actualizar posiciones de fantasmas
-            actualizarFantasmas();
+                // Actualizar posiciones de fantasmas
+                actualizarFantasmas();
 
-            repaint();
-        });
-        timer.start();
+                repaint();
+            });
+            timer.start();
 
-        //Inicializar Audio/Música
-        reproductor = new Audio();
-        reproductor.reproducir("lobby-theme.wav");
-    }
+            //Inicializar Audio/Música
+            reproductor = new Audio();
+            reproductor.reproducir("lobby-theme.wav");
+        }
 
     private void inicializarFantasmas() {
         // Posiciones iniciales aleatorias para cada fantasma
@@ -468,11 +468,13 @@ public class PantallaInicio extends JPanel implements KeyListener {
     }
 
     private void iniciarJuego() {
+        reproductor.detener();
+
         SwingUtilities.invokeLater(() -> {
             JFrame gameFrame = new JFrame("Pac-Man");
             Mapa mapa = new Mapa(jugadorActual);
 
-            // IMPORTANTE: Pasar referencia de la ventana de inicio al mapa
+            // Pasar referencia de la ventana de inicio al mapa
             JFrame ventanaInicio = (JFrame) SwingUtilities.getWindowAncestor(this);
             mapa.setVentanaInicio(ventanaInicio);
 

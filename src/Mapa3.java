@@ -19,6 +19,11 @@ public class Mapa3 extends JPanel implements Runnable, KeyListener {
     //Instancia para regresar a PantallaInicio
     private JFrame ventanaInicio;
 
+    //Variables para la música del juego
+    private Audio reproductorJuego;
+    private Audio eatSound;
+    private Audio deathSound;
+
     // Variables del juego
     private int highScore = 0;
     private int vidas = 3;
@@ -282,6 +287,12 @@ public class Mapa3 extends JPanel implements Runnable, KeyListener {
         threadPikzy = new Thread(pikzy);
         threadPikzy.start();
 
+        //Inicializar y reproducir música del juego
+        reproductorJuego = new Audio();
+        reproductorJuego.reproducir("main-theme.wav");
+        eatSound=new Audio();
+        deathSound=new Audio();
+
     }
 
     @Override
@@ -367,6 +378,9 @@ public class Mapa3 extends JPanel implements Runnable, KeyListener {
                             puntajeNivel += 5;
                             puntosRestantes--;
                             laberinto[runPac.getYposcion()][runPac.getXposcion()] = 0;
+
+                            // Reproducir sonido de comer punto
+                            eatSound.reproducirUnaVez("eat-sound.wav");
 
                             // Verificar si se completó el nivel
                             if (puntosRestantes <= 0) {
@@ -542,6 +556,10 @@ public class Mapa3 extends JPanel implements Runnable, KeyListener {
     private void regresarAlMenu() {
         // Detener todos los hilos
         detenerJuego();
+
+        //Detener la música y regresar al lobby theme
+        reproductorJuego.detener();
+        reproductorJuego.reproducir("lobby-theme.wav");
 
         // Cerrar la ventana actual del juego
         JFrame ventanaActual = (JFrame) SwingUtilities.getWindowAncestor(this);
@@ -902,6 +920,7 @@ public class Mapa3 extends JPanel implements Runnable, KeyListener {
             } else {
                 // El fantasma mata a Pacman - AQUÍ SE PIERDE LA VIDA
                 System.out.println("¡" + nombre + " atrapó a Pacman!");
+                deathSound.reproducirUnaVez("death-sound.wav");
                 perderVida(); // Ya tienes este método implementado
 
                 if (getVidas() > 0) {
@@ -909,6 +928,7 @@ public class Mapa3 extends JPanel implements Runnable, KeyListener {
                 } else {
                     // Game Over
                     System.out.println("Game Over!");
+                    deathSound.reproducirUnaVez("finaldeath-sound.wav");
                     mostrarPantallaGameOver();
                 }
             }
@@ -920,6 +940,8 @@ public class Mapa3 extends JPanel implements Runnable, KeyListener {
         detener();
 
         // Mostrar transición de Game Over
+        reproductorJuego.detener();
+        reproductorJuego.reproducir("lobby-theme.wav");
         SwingUtilities.invokeLater(() -> {
             JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
 
