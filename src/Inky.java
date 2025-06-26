@@ -8,6 +8,7 @@ import java.util.List;
 
 public class Inky implements Runnable{
     private ImageIcon imagenInky;
+    private ImageIcon imagenAsustado;
     private int[][] mapita;
     private Graph<String, DefaultEdge> camino;
     private int inkyX;
@@ -26,6 +27,7 @@ public class Inky implements Runnable{
     public Inky(Pacman pacman, int [][] laberinto){
         try{
             imagenInky=new ImageIcon(getClass().getResource("inky.gif"));
+            imagenAsustado=new ImageIcon(getClass().getResource("fantasmaAsustado.gif"));
         }catch(Exception e){
             System.err.println("Algo salio mal " + e);
         }
@@ -193,7 +195,10 @@ public class Inky implements Runnable{
     }
 
     public void dibujarInky(Graphics g) {
-        if (imagenInky != null) {
+        if(vulnerable){
+            g.drawImage(imagenAsustado.getImage(), inkyX * 20, inkyY * 20, 20, 20, null);
+        }
+        else{
             g.drawImage(imagenInky.getImage(), inkyX * 20, inkyY * 20, 20, 20, null);
         }
     }
@@ -223,16 +228,12 @@ public class Inky implements Runnable{
         }
     }
 
-    /**
-     * Verifica si el fantasma es vulnerable
-     */
+
     public boolean isVulnerable() {
         return vulnerable;
     }
 
-    /**
-     * Reinicia el fantasma en el centro del mapa
-     */
+
     public void reiniciarEnCentro() {
         // Establecer coordenadas del centro (ajustar según cada fantasma)
         inkyX = CENTRO_X;
@@ -241,16 +242,11 @@ public class Inky implements Runnable{
         System.out.println("Inky reiniciado en el centro del mapa");
     }
 
-    /**
-     * Obtiene la posición X actual
-     */
+
     public int getInkyX() {
         return inkyX;
     }
 
-    /**
-     * Obtiene la posición Y actual
-     */
     public int getInkyY() {
         return inkyY;
     }

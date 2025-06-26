@@ -10,6 +10,7 @@ import java.util.List;
 
 public class Blinky implements Runnable{
     private ImageIcon imagenBlinky;
+    private ImageIcon imagenAsustado;
     private int[][] mapita;
     private Graph<String, DefaultEdge> camino;
     private int blinkyX;
@@ -30,6 +31,7 @@ public class Blinky implements Runnable{
     public Blinky(Pacman pacman, int[][] laberinto){
         try{
             imagenBlinky=new ImageIcon(getClass().getResource("blinky.gif"));
+            imagenAsustado=new ImageIcon(getClass().getResource("fantasmaAsustado.gif"));
         }catch(Exception e){
             System.err.println("Algo salio mal " + e);
         }
@@ -165,7 +167,10 @@ public class Blinky implements Runnable{
     }
 
     public void dibujarBlinky(Graphics g) {
-        if (imagenBlinky != null) {
+        if(vulnerable){
+            g.drawImage(imagenAsustado.getImage(), blinkyX * 20, blinkyY * 20, 20, 20, null);
+        }
+        else{
             g.drawImage(imagenBlinky.getImage(), blinkyX * 20, blinkyY * 20, 20, 20, null);
         }
     }
