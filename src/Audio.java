@@ -49,8 +49,10 @@ public class Audio {
     }
 
     public void detener() {
-        if (clip != null && clip.isRunning()) {
+        if (clip != null) {
             clip.stop();
+            clip.close();  // Cerrar el recurso
+            clip = null;   // Eliminar referencia
         }
     }
 

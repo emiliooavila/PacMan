@@ -599,6 +599,18 @@ public class PantallaInicio extends JPanel implements KeyListener {
         repaint();
     }
 
+    public void reanudarMusica() {
+        // Detener cualquier música existente
+        if (reproductor != null) {
+            reproductor.detener();
+            reproductor = null;
+        }
+
+        // Iniciar nueva instancia de música
+        reproductor = new Audio();
+        reproductor.reproducir("lobby-theme.wav");
+    }
+
     @Override
     public void keyReleased(KeyEvent e) {}
 

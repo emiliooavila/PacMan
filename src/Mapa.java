@@ -560,7 +560,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
 
         //Detener la música
         reproductorJuego.detener();
-        reproductorJuego.reproducir("lobby-theme.wav");
+        reproductorJuego=null;
 
         // Cerrar la ventana actual del juego
         JFrame ventanaActual = (JFrame) SwingUtilities.getWindowAncestor(this);
@@ -577,15 +577,11 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
 
                 // CLAVE: Dar foco específicamente al componente que maneja las teclas
                 Component componente = ventanaInicio.getContentPane().getComponent(0);
-                if (componente != null) {
+                if (componente instanceof PantallaInicio) {
                     componente.requestFocusInWindow();
+                    ((PantallaInicio) componente).reanudarMusica();
                 }
-
-                // Alternativa si lo anterior no funciona:
-                // ventanaInicio.setFocusable(true);
-                // ventanaInicio.requestFocusInWindow();
             } else {
-                // Si por alguna razón no tenemos la referencia, crear nueva
                 new PantallaInicio().setVisible(true);
             }
         });
