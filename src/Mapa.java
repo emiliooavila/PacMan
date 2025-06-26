@@ -19,6 +19,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     //Instancia para regresar a PantallaInicio
     private JFrame ventanaInicio;
 
+
     // Variables del juego
     private int highScore = 0;
     private int vidas = 3;
@@ -55,6 +56,18 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     private Pinky pinky;
     private Inky inky;
     private Pikzy pikzy;
+
+    // Threads de los fantasmas
+    private Thread threadClyde;
+    private Thread threadBlinky;
+    private Thread threadPinky;
+    private Thread threadInky;
+    private Thread threadPikzy;
+
+    // Variables para el modo Power Pellet
+    private boolean modoFantasmasComestibles = false;
+    private long tiempoActivacionPowerPellet = 0;
+    private final long DURACION_POWER_PELLET = 10000; // 10 segundos en milisegundos
 
     // Matriz del laberinto
     // 0 = espacio vacío, 1 = pared, 2 = punto, 3 = power pellet
@@ -249,16 +262,26 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         gameThread.start();
         pacman.start();
 
+        // Inicializar fantasmas y sus threads
         clyde = new Clyde(runPac, laberinto);
-        new Thread(clyde).start();
+        threadClyde = new Thread(clyde);
+        threadClyde.start();
+
         blinky = new Blinky(runPac, laberinto);
-        new Thread(blinky).start();
+        threadBlinky = new Thread(blinky);
+        threadBlinky.start();
+
         pinky = new Pinky(runPac, laberinto);
-        new Thread(pinky).start();
+        threadPinky = new Thread(pinky);
+        threadPinky.start();
+
         inky = new Inky(runPac, laberinto);
-        new Thread(inky).start();
+        threadInky = new Thread(inky);
+        threadInky.start();
+
         pikzy = new Pikzy(runPac, laberinto);
-        new Thread(pikzy).start();
+        threadPikzy = new Thread(pikzy);
+        threadPikzy.start();
 
     }
 
@@ -352,9 +375,12 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                             }
                         }
                         else if(laberinto[runPac.getYposcion()][runPac.getXposcion()] == 3){
-                            // Power pellet - puedes agregar puntos extra aquí si quieres
-                            incrementarScore(50); // Power pellets valen más
+                            // Power pellet - activar modo fantasmas comestibles
+                            incrementarScore(50);
                             laberinto[runPac.getYposcion()][runPac.getXposcion()] = 0;
+
+                            // NUEVA FUNCIONALIDAD: Activar pastilla
+                            pastillaActivada();
                         }
 
                         // Lógica del túnel
@@ -475,21 +501,102 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         }
     }
 
+    private void reanudarJuego() {
+        enPausa = false;
+        pausarTodosLosFantasmas(false);
+        runPac.setPause(false);
+    }
+
     //metodos Mapa
     private void manejarMenuPausa(KeyEvent e) {
         switch (e.getKeyCode()) {
+            case KeyEvent.VK_ESCAPE:
+                reanudarJuego();
+                break;
+
             case KeyEvent.VK_UP:
+            case KeyEvent.VK_W:
                 opcionSeleccionada = (opcionSeleccionada - 1 + opcionesMenu.length) % opcionesMenu.length;
                 break;
+
             case KeyEvent.VK_DOWN:
+            case KeyEvent.VK_S:
                 opcionSeleccionada = (opcionSeleccionada + 1) % opcionesMenu.length;
                 break;
+
             case KeyEvent.VK_ENTER:
-                ejecutarOpcionMenu();
+                switch (opcionSeleccionada) {
+                    case 0: // Continuar
+                        reanudarJuego();
+                        break;
+                    case 1: // Regresar al Menú
+                        regresarAlMenu();
+                        break;
+                    case 2: // Salir del juego (opcional)
+                        System.exit(0);
+                        break;
+                }
                 break;
-            case KeyEvent.VK_ESCAPE:
-                enPausa = false; // Salir del menú de pausa
-                break;
+        }
+    }
+
+    private void regresarAlMenu() {
+        // Detener todos los hilos
+        detenerJuego();
+
+        // Cerrar la ventana actual del juego
+        JFrame ventanaActual = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (ventanaActual != null) {
+            ventanaActual.dispose();
+        }
+
+        // Mostrar la ventana de inicio que ya existía
+        SwingUtilities.invokeLater(() -> {
+            if (ventanaInicio != null) {
+                ventanaInicio.setVisible(true);
+                ventanaInicio.toFront(); // Traer al frente
+                ventanaInicio.requestFocus(); // Dar foco a la ventana
+
+                // CLAVE: Dar foco específicamente al componente que maneja las teclas
+                Component componente = ventanaInicio.getContentPane().getComponent(0);
+                if (componente != null) {
+                    componente.requestFocusInWindow();
+                }
+
+                // Alternativa si lo anterior no funciona:
+                // ventanaInicio.setFocusable(true);
+                // ventanaInicio.requestFocusInWindow();
+            } else {
+                // Si por alguna razón no tenemos la referencia, crear nueva
+                new PantallaInicio().setVisible(true);
+            }
+        });
+    }
+
+    private void detenerJuego() {
+        // Detener PacMan
+        if (runPac != null) {
+            runPac.setPause(true);
+            if (runPac.moveTimer != null) {
+                runPac.moveTimer.stop();
+            }
+        }
+
+        // Detener todos los fantasmas
+        if (clyde != null) {
+            clyde.detener();
+        }
+        if (blinky != null) {
+            blinky.detener();
+        }
+        if (pinky != null) {
+            pinky.detener();
+        }
+        if (inky != null) {
+            inky.detener();
+        }
+        if (pikzy != null) {
+            pikzy.detener();
         }
     }
 
@@ -497,7 +604,15 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         switch (opcionSeleccionada) {
             case 0: // Continuar
                 enPausa = false;
+
+                // Reanudar todos los fantasmas
+                if (clyde != null) clyde.setPausado(false);
+                if (blinky != null) blinky.setPausado(false);
+                if (pinky != null) pinky.setPausado(false);
+                if (inky != null) inky.setPausado(false);
+                if (pikzy != null) pikzy.setPausado(false);
                 break;
+
             case 1: // Salir
                 // Detener el juego
                 detener();
@@ -636,6 +751,10 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 long tiempoTranscurrido = tiempoActual - tiempoInicio;
                 mostrarPuntos = (tiempoTranscurrido / 500) % 2 == 0;
 
+                // NUEVAS VERIFICACIONES:
+                verificarEstadoPowerPellet();
+                verificarColisiones();
+
                 // Verificar si el nivel está completado
                 if (nivelCompletado) {
                     cambiarANivel2();
@@ -651,6 +770,11 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 break;
             }
         }
+    }
+
+    // Getter para que los fantasmas puedan consultar el estado
+    public boolean isModoFantasmasComestibles() {
+        return modoFantasmasComestibles;
     }
 
     // Métodos para controlar el juego
@@ -683,29 +807,229 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         this.highScore = score;
     }
 
+    public void pastillaActivada() {
+        modoFantasmasComestibles = true;
+        tiempoActivacionPowerPellet = System.currentTimeMillis();
+
+        // Notificar a todos los fantasmas que ahora son vulnerables
+        if (clyde != null) clyde.setVulnerable(true);
+        if (blinky != null) blinky.setVulnerable(true);
+        if (pinky != null) pinky.setVulnerable(true);
+        if (inky != null) inky.setVulnerable(true);
+        if (pikzy != null) pikzy.setVulnerable(true);
+
+        System.out.println("¡Power Pellet activado! Los fantasmas son vulnerables por " + (DURACION_POWER_PELLET/1000) + " segundos");
+    }
+
+    private void verificarEstadoPowerPellet() {
+        if (modoFantasmasComestibles) {
+            long tiempoTranscurrido = System.currentTimeMillis() - tiempoActivacionPowerPellet;
+
+            if (tiempoTranscurrido >= DURACION_POWER_PELLET) {
+                // Se acabó el efecto del Power Pellet
+                modoFantasmasComestibles = false;
+
+                // Notificar a todos los fantasmas que ya no son vulnerables
+                if (clyde != null) clyde.setVulnerable(false);
+                if (blinky != null) blinky.setVulnerable(false);
+                if (pinky != null) pinky.setVulnerable(false);
+                if (inky != null) inky.setVulnerable(false);
+                if (pikzy != null) pikzy.setVulnerable(false);
+
+                System.out.println("Efecto Power Pellet terminado. Los fantasmas vuelven a ser peligrosos.");
+            }
+        }
+    }
+
+    private void verificarColisiones() {
+        int pacX = runPac.getXposcion();
+        int pacY = runPac.getYposcion();
+
+        // Verificar colisión con cada fantasma
+        verificarColisionFantasma("Clyde", clyde, pacX, pacY);
+        verificarColisionFantasma("Blinky", blinky, pacX, pacY);
+        verificarColisionFantasma("Pinky", pinky, pacX, pacY);
+        verificarColisionFantasma("Inky", inky, pacX, pacY);
+        verificarColisionFantasma("Pikzy", pikzy, pacX, pacY);
+    }
+
+    private void verificarColisionFantasma(String nombre, Object fantasma, int pacX, int pacY) {
+        if (fantasma == null) return;
+
+        int fantasmaX = -1, fantasmaY = -1;
+
+        // Obtener posición del fantasma según su tipo
+        if (fantasma instanceof Clyde) {
+            Clyde c = (Clyde) fantasma;
+            fantasmaX = c.getClydeX();
+            fantasmaY = c.getClydeY();
+        } else if (fantasma instanceof Blinky) {
+            Blinky b = (Blinky) fantasma;
+            fantasmaX = b.getBlinkyX(); // Necesitas agregar este método
+            fantasmaY = b.getBlinkyY(); // Necesitas agregar este método
+        } else if (fantasma instanceof Pinky) {
+            Pinky p = (Pinky) fantasma;
+            fantasmaX = p.getPinkyX(); // Necesitas agregar este método
+            fantasmaY = p.getPinkyY(); // Necesitas agregar este método
+        } else if (fantasma instanceof Inky) {
+            Inky i = (Inky) fantasma;
+            fantasmaX = i.getInkyX(); // Necesitas agregar este método
+            fantasmaY = i.getInkyY(); // Necesitas agregar este método
+        } else if (fantasma instanceof Pikzy) {
+            Pikzy p = (Pikzy) fantasma;
+            fantasmaX = p.getPikzyX(); // Necesitas agregar este método
+            fantasmaY = p.getPikzyY(); // Necesitas agregar este método
+        }
+
+        // Verificar si están en la misma posición
+        if (fantasmaX == pacX && fantasmaY == pacY) {
+            if (modoFantasmasComestibles) {
+                // Pacman se come al fantasma
+                System.out.println("¡Pacman se comió a " + nombre + "!");
+                incrementarScore(200);
+
+                // Reiniciar fantasma según su tipo
+                if (fantasma instanceof Clyde) {
+                    ((Clyde) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Blinky) {
+                    ((Blinky) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Pinky) {
+                    ((Pinky) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Inky) {
+                    ((Inky) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Pikzy) {
+                    ((Pikzy) fantasma).reiniciarEnCentro();
+                }
+            } else {
+                // El fantasma mata a Pacman - AQUÍ SE PIERDE LA VIDA
+                System.out.println("¡" + nombre + " atrapó a Pacman!");
+                perderVida(); // Ya tienes este método implementado
+
+                if (getVidas() > 0) {
+                    reiniciarPosiciones();
+                } else {
+                    // Game Over
+                    System.out.println("Game Over!");
+                    mostrarPantallaGameOver();
+                }
+            }
+        }
+    }
+
+    private void mostrarPantallaGameOver() {
+        // Detener el juego actual
+        detener();
+
+        // Mostrar transición de Game Over
+        SwingUtilities.invokeLater(() -> {
+            JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+
+            // Crear un panel de transición para Game Over
+            JPanel gameOverPanel = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.setColor(Color.BLACK);
+                    g.fillRect(0, 0, getWidth(), getHeight());
+
+                    g.setColor(Color.RED);
+                    g.setFont(new Font("Arial", Font.BOLD, 48));
+                    FontMetrics fm = g.getFontMetrics();
+                    String texto = "¡PERDISTE TODAS LAS VIDAS!";
+                    int x = (getWidth() - fm.stringWidth(texto)) / 2;
+                    int y = getHeight() / 2 - 50;
+                    g.drawString(texto, x, y);
+
+                    g.setColor(Color.YELLOW);
+                    texto = "GAME OVER";
+                    x = (getWidth() - fm.stringWidth(texto)) / 2;
+                    y = getHeight() / 2 + 50;
+                    g.drawString(texto, x, y);
+                }
+            };
+
+            currentFrame.setContentPane(gameOverPanel);
+            currentFrame.revalidate();
+            currentFrame.repaint();
+
+            // Después de 3 segundos, regresar al menú principal
+            Timer gameOverTimer = new Timer(3000, e -> {
+                currentFrame.dispose();
+
+                // Regresar a PantallaInicio
+                SwingUtilities.invokeLater(() -> {
+                    if (ventanaInicio != null) {
+                        ventanaInicio.setVisible(true);
+                        ventanaInicio.toFront();
+                        ventanaInicio.requestFocus();
+
+                        Component componente = ventanaInicio.getContentPane().getComponent(0);
+                        if (componente != null) {
+                            componente.requestFocusInWindow();
+                        }
+                    } else {
+                        // Si no hay referencia, crear nueva pantalla de inicio
+                        new PantallaInicio().setVisible(true);
+                    }
+                });
+            });
+            gameOverTimer.setRepeats(false);
+            gameOverTimer.start();
+        });
+    }
+
+    private void reiniciarPosiciones() {
+        // Reiniciar Pacman a su posición inicial
+        runPac.reiniciarPosicion();
+
+        // Reiniciar fantasmas al centro
+        if (clyde != null) clyde.reiniciarEnCentro();
+        if (blinky != null) blinky.reiniciarEnCentro();
+        if (pinky != null) pinky.reiniciarEnCentro();
+        if (inky != null) inky.reiniciarEnCentro();
+        if (pikzy != null) pikzy.reiniciarEnCentro();
+    }
+
+
+
+    private void pausarTodosLosFantasmas(boolean pausado) {
+        if (clyde != null) clyde.setPausado(pausado);
+        if (blinky != null) blinky.setPausado(pausado);
+        if (pinky != null) pinky.setPausado(pausado);
+        if (inky != null) inky.setPausado(pausado);
+        if (pikzy != null) pikzy.setPausado(pausado);
+    }
 
 
     // Eventos de teclado
     @Override
     public void keyPressed(KeyEvent e) {
         if (enPausa) {
+            // Manejar menú de pausa
             manejarMenuPausa(e);
             return;
         }
+
         switch (e.getKeyCode()) {
             case KeyEvent.VK_ESCAPE:
+                // Entrar en pausa
                 enPausa = true;
-                opcionSeleccionada = 0; // Resetear selección
+                opcionSeleccionada = 0;
+                pausarTodosLosFantasmas(true);
+                runPac.setPause(true);
                 break;
+
             case KeyEvent.VK_SPACE:
-                // Pausar/reanudar juego
+                // Pausa rápida sin menú
+                enPausa = !enPausa;
+                pausarTodosLosFantasmas(enPausa);
+                runPac.setPause(enPausa);
+                break;
+
             default:
-
-                runPac.moverPacman(e); // <<--- Esta línea es clave
-
+                runPac.moverPacman(e);
                 break;
         }
-        runPac.setPause(enPausa);
     }
 
     @Override
@@ -715,8 +1039,44 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
     public void keyTyped(KeyEvent e) {}
 
     public void detener() {
-        guardarJugador(); // Guardar puntaje antes de salir
+        guardarJugador();
         running = false;
+
+        // Detener todos los fantasmas
+        if (clyde != null) {
+            clyde.detener();
+        }
+        if (threadClyde != null) {
+            threadClyde.interrupt();
+        }
+
+        if (blinky != null) {
+            blinky.detener();
+        }
+        if (threadBlinky != null) {
+            threadBlinky.interrupt();
+        }
+
+        if (pinky != null) {
+            pinky.detener();
+        }
+        if (threadPinky != null) {
+            threadPinky.interrupt();
+        }
+
+        if (inky != null) {
+            inky.detener();
+        }
+        if (threadInky != null) {
+            threadInky.interrupt();
+        }
+
+        if (pikzy != null) {
+            pikzy.detener();
+        }
+        if (threadPikzy != null) {
+            threadPikzy.interrupt();
+        }
 
         if (gameThread != null) {
             gameThread.interrupt();

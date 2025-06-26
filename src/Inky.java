@@ -1,13 +1,10 @@
-
 import javax.swing.*;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
-
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-
 
 public class Inky implements Runnable{
     private ImageIcon imagenInky;
@@ -16,6 +13,15 @@ public class Inky implements Runnable{
     private int inkyX;
     private int inkyY;
     private Pacman auxPacman;
+
+    // Variables para control de pausa
+    private volatile boolean pausado = false;
+    private volatile boolean running = true;
+
+    // Variables para el modo vulnerable
+    private volatile boolean vulnerable = false;
+    private final int CENTRO_X = 14; // Ajustar según posición inicial deseada
+    private final int CENTRO_Y = 14; // Ajustar según posición inicial deseada
 
     public Inky(Pacman pacman, int [][] laberinto){
         try{
@@ -26,7 +32,6 @@ public class Inky implements Runnable{
         this.inkyX = 14;
         this.inkyY = 14;
         this.auxPacman=pacman;
-
 
         this.mapita = laberinto;
 
@@ -63,14 +68,28 @@ public class Inky implements Runnable{
         return x + "_" + y;
     }
 
-
     @Override
     public void run() {
-        while (true) {
+        while (running) {
             try {
+                // Verificar si está pausado
+                while (pausado && running) {
+                    Thread.sleep(100); // Esperar mientras está pausado
+                }
+
+                if (!running) break; // Salir si se detuvo el juego
+
                 Thread.sleep(1000);
 
-                String siguiente = movimientoInky(auxPacman.getXposcion(), auxPacman.getYposcion());
+                String siguiente;
+
+                if (vulnerable) {
+                    // Comportamiento cuando es vulnerable: huir del Pacman
+                    siguiente = movimientoVulnerable(auxPacman.getXposcion(), auxPacman.getYposcion());
+                } else {
+                    // Comportamiento normal: perseguir al Pacman
+                    siguiente = movimientoInky(auxPacman.getXposcion(), auxPacman.getYposcion());
+                }
 
                 if (siguiente != null) {
                     String[] auxCoordenadas = siguiente.split("_");
@@ -79,10 +98,11 @@ public class Inky implements Runnable{
                 }
 
             } catch (InterruptedException e) {
-                System.out.println("Algo salio mla" + e.getMessage());
+                System.out.println("Inky interrumpido: " + e.getMessage());
+                Thread.currentThread().interrupt();
+                break;
             }
         }
-
     }
 
     public String movimientoInky(int x, int y){
@@ -132,7 +152,44 @@ public class Inky implements Runnable{
         }
 
         return caminoReverso.get(1);
+    }
 
+    // Método para movimiento cuando es vulnerable (huir del Pacman)
+    private String movimientoVulnerable(int pacmanX, int pacmanY) {
+        String origen = nodoId(inkyX, inkyY);
+
+        // Obtener todos los vecinos posibles
+        List<String> vecinosDisponibles = new ArrayList<>();
+
+        for (DefaultEdge edge : camino.edgesOf(origen)) {
+            String vecino = camino.getEdgeSource(edge).equals(origen)
+                    ? camino.getEdgeTarget(edge)
+                    : camino.getEdgeSource(edge);
+            vecinosDisponibles.add(vecino);
+        }
+
+        if (vecinosDisponibles.isEmpty()) {
+            return origen;
+        }
+
+        // Encontrar el vecino más alejado del Pacman
+        String mejorVecino = null;
+        double maxDistancia = -1;
+
+        for (String vecino : vecinosDisponibles) {
+            String[] coords = vecino.split("_");
+            int vx = Integer.parseInt(coords[0]);
+            int vy = Integer.parseInt(coords[1]);
+
+            double distancia = Math.sqrt(Math.pow(vx - pacmanX, 2) + Math.pow(vy - pacmanY, 2));
+
+            if (distancia > maxDistancia) {
+                maxDistancia = distancia;
+                mejorVecino = vecino;
+            }
+        }
+
+        return mejorVecino != null ? mejorVecino : origen;
     }
 
     public void dibujarInky(Graphics g) {
@@ -141,5 +198,60 @@ public class Inky implements Runnable{
         }
     }
 
+    // Métodos para controlar la pausa
+    public void setPausado(boolean pausado) {
+        this.pausado = pausado;
+    }
 
+    public void detener() {
+        this.running = false;
+    }
+
+    public boolean isPausado() {
+        return pausado;
+    }
+
+    /**
+     * Establece si el fantasma es vulnerable (puede ser comido)
+     */
+    public void setVulnerable(boolean vulnerable) {
+        this.vulnerable = vulnerable;
+        if (vulnerable) {
+            System.out.println("Inky ahora es vulnerable!");
+        } else {
+            System.out.println("Inky ya no es vulnerable.");
+        }
+    }
+
+    /**
+     * Verifica si el fantasma es vulnerable
+     */
+    public boolean isVulnerable() {
+        return vulnerable;
+    }
+
+    /**
+     * Reinicia el fantasma en el centro del mapa
+     */
+    public void reiniciarEnCentro() {
+        // Establecer coordenadas del centro (ajustar según cada fantasma)
+        inkyX = CENTRO_X;
+        inkyY = CENTRO_Y;
+        vulnerable = false;
+        System.out.println("Inky reiniciado en el centro del mapa");
+    }
+
+    /**
+     * Obtiene la posición X actual
+     */
+    public int getInkyX() {
+        return inkyX;
+    }
+
+    /**
+     * Obtiene la posición Y actual
+     */
+    public int getInkyY() {
+        return inkyY;
+    }
 }

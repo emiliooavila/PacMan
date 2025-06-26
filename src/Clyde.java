@@ -6,11 +6,8 @@ import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 import java.util.Random;
-
-
 import java.awt.*;
 import java.util.List;
-
 
 public class Clyde implements Runnable{
     private ImageIcon imagenClyde;
@@ -20,20 +17,30 @@ public class Clyde implements Runnable{
     private int clydeY;
     private Pacman auxPacman;
 
+    // Variables para control de pausa
+    private volatile boolean pausado = false;
+    private volatile boolean running = true;
+
+    // Variables para el modo vulnerable
+    private volatile boolean vulnerable = false;
+    private final int CENTRO_X = 14; // Posición central del laberinto
+    private final int CENTRO_Y = 14;
+
     public Clyde(Pacman pacman, int[][] laberinto){
         try{
             imagenClyde=new ImageIcon(getClass().getResource("clyde.gif"));
         }catch(Exception e){
             System.err.println("Algo salio mal " + e);
         }
-        this.clydeX = 16;
-        this.clydeY = 14;
-        this.auxPacman=pacman;
 
+        // Inicializar en el centro del mapa
+        this.clydeX = CENTRO_X;
+        this.clydeY = CENTRO_Y;
+        this.auxPacman=pacman;
 
         this.mapita = laberinto;
 
-
+        // Resto del código del constructor...
         camino = new SimpleGraph<>(DefaultEdge.class);
 
         for (int y = 0; y < this.mapita.length; y++) {
@@ -67,28 +74,43 @@ public class Clyde implements Runnable{
         return x + "_" + y;
     }
 
-
     @Override
     public void run() {
         Random rand = new Random();
-        while (true) {
+        while (running) {
             try {
-                Thread.sleep(400);
-                String actual = nodoId(clydeX, clydeY);
-                List<String> vecinos = Graphs.neighborListOf(camino, actual);
-
-                if (!vecinos.isEmpty()) {
-                    String siguiente = vecinos.get(rand.nextInt(vecinos.size()));
-                    String[] auxCoordenadas = siguiente.split("_");
-                    clydeX = Integer.parseInt(auxCoordenadas[0]);
-                    clydeY = Integer.parseInt(auxCoordenadas[1]);
+                // Verificar si está pausado
+                if (pausado) {
+                    Thread.sleep(50);
+                    continue;
                 }
 
-            } catch (Exception e) {
-                System.out.println("Algo salio mla" + e.getMessage());
+                if (!running) break;
+
+                Thread.sleep(400);
+
+                if (vulnerable) {
+                    // Comportamiento cuando es vulnerable: huir de Pacman
+                    moverAlejandoseDePacman();
+                } else {
+                    // Comportamiento normal: movimiento aleatorio
+                    String actual = nodoId(clydeX, clydeY);
+                    List<String> vecinos = Graphs.neighborListOf(camino, actual);
+
+                    if (!vecinos.isEmpty()) {
+                        String siguiente = vecinos.get(rand.nextInt(vecinos.size()));
+                        String[] auxCoordenadas = siguiente.split("_");
+                        clydeX = Integer.parseInt(auxCoordenadas[0]);
+                        clydeY = Integer.parseInt(auxCoordenadas[1]);
+                    }
+                }
+
+            } catch (InterruptedException e) {
+                System.out.println("Clyde interrumpido: " + e.getMessage());
+                Thread.currentThread().interrupt();
+                break;
             }
         }
-
     }
 
     public String movimientoClyde(int x, int y){
@@ -107,7 +129,71 @@ public class Clyde implements Runnable{
         }
 
         return moverse.get(1);
+    }
 
+    private void moverAlejandoseDePacman() {
+        if (auxPacman == null) return;
+
+        int pacX = auxPacman.getXposcion();
+        int pacY = auxPacman.getYposcion();
+
+        String actual = nodoId(clydeX, clydeY);
+        List<String> vecinos = Graphs.neighborListOf(camino, actual);
+
+        if (vecinos.isEmpty()) return;
+
+        // Encontrar el vecino más alejado de Pacman
+        String mejorMovimiento = actual;
+        double maxDistancia = 0;
+
+        for (String vecino : vecinos) {
+            String[] coords = vecino.split("_");
+            int x = Integer.parseInt(coords[0]);
+            int y = Integer.parseInt(coords[1]);
+
+            // Calcular distancia a Pacman
+            double distancia = Math.sqrt(Math.pow(x - pacX, 2) + Math.pow(y - pacY, 2));
+
+            if (distancia > maxDistancia) {
+                maxDistancia = distancia;
+                mejorMovimiento = vecino;
+            }
+        }
+
+        // Mover al mejor vecino (más alejado de Pacman)
+        if (!mejorMovimiento.equals(actual)) {
+            String[] auxCoordenadas = mejorMovimiento.split("_");
+            clydeX = Integer.parseInt(auxCoordenadas[0]);
+            clydeY = Integer.parseInt(auxCoordenadas[1]);
+        }
+    }
+
+    public void setVulnerable(boolean vulnerable) {
+        this.vulnerable = vulnerable;
+        if (vulnerable) {
+            System.out.println("Clyde ahora es vulnerable!");
+        } else {
+            System.out.println("Clyde ya no es vulnerable.");
+        }
+    }
+
+    public boolean isVulnerable() {
+        return vulnerable;
+    }
+
+    public void reiniciarEnCentro() {
+        clydeX = CENTRO_X;
+        clydeY = CENTRO_Y;
+        vulnerable = false; // Al reiniciar, ya no es vulnerable
+        System.out.println("Clyde reiniciado en el centro del mapa");
+    }
+
+    public int getClydeX() {
+        return clydeX;
+    }
+
+    public int getClydeY() {
+        return clydeY;
     }
 
     public void dibujarClyde(Graphics g) {
@@ -116,5 +202,16 @@ public class Clyde implements Runnable{
         }
     }
 
+    // Métodos para controlar la pausa
+    public void setPausado(boolean pausado) {
+        this.pausado = pausado;
+    }
 
+    public void detener() {
+        this.running = false;
+    }
+
+    public boolean isPausado() {
+        return pausado;
+    }
 }

@@ -33,13 +33,10 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
     // Variables para efectos
     private long tiempoInicio;
     private boolean mostrarPuntos = true;
+    enum Direction {UP,DOWN,LEFT,RIGHT,NONE};
+    private Direction movment=Direction.RIGHT;
 
-    enum Direction {UP, DOWN, LEFT, RIGHT, NONE}
-
-    ;
-    private Direction movment = Direction.RIGHT;
-
-    Direction aux = movment;
+    Direction aux=movment;
     private Timer moveTimer;
 
     // Variables del sistema de jugadores
@@ -52,54 +49,72 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
     private int puntajeNivel = 0;
     private boolean nivelCompletado = false;
 
-    // Matriz del laberinto
-    // 0 = espacio vacío, 1 = pared, 2 = punto, 3 = power pellet
+    //Fantasmas
+    private Clyde clyde;
+    private Blinky blinky;
+    private Pinky pinky;
+    private Inky inky;
+    private Pikzy pikzy;
+
+    // Threads de los fantasmas
+    private Thread threadClyde;
+    private Thread threadBlinky;
+    private Thread threadPinky;
+    private Thread threadInky;
+    private Thread threadPikzy;
+
+    // Variables para el modo Power Pellet
+    private boolean modoFantasmasComestibles = false;
+    private long tiempoActivacionPowerPellet = 0;
+    private final long DURACION_POWER_PELLET = 10000; // 10 segundos en milisegundos
+
+    // Matriz del laberinto MODIFICADA
     private int[][] laberinto = {
-            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
-            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-            {1, 3, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3, 1},
-            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
-            {1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-            {1, 2, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-            {1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1},
-            {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-            {0, 0, 0, 0, 0, 1, 2, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-            {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-            {0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0},
-            {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0},
-            {1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1},
-            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
-            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-            {1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1},
-            {1, 3, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 0, 4, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 3, 1},
-            {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
-            {1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1},
-            {1, 2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 1},
-            {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
-            {1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1},
-            {1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
-            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+            {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+            {1,2,2,2,1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1},
+            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
+            {1,3,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,3,1},
+            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
+            {1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1},
+            {1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1},
+            {1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1},
+            {1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1},
+            {1,1,1,1,1,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,1,1,1,1,1},
+            {0,0,0,0,0,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,0,0,0,0,0},
+            {0,0,0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,0,0,0,0,0},
+            {0,0,0,0,0,1,2,1,1,0,1,1,1,0,0,1,1,1,0,1,1,2,1,0,0,0,0,0},
+            {1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1},
+            {0,0,0,0,0,0,2,0,0,0,1,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0},
+            {1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1},
+            {0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0},
+            {0,0,0,0,0,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,0,0,0,0,0},
+            {0,0,0,0,0,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,0,0,0,0,0},
+            {1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1},
+            {1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1},
+            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
+            {1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1},
+            {1,3,2,2,1,1,2,2,2,2,2,2,2,0,4,2,2,2,2,2,2,2,1,1,2,2,3,1},
+            {1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1},
+            {1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1},
+            {1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1},
+            {1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1},
+            {1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1},
+            {1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1},
+            {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
     };
-    private Pacman runPac = new Pacman(laberinto);
-    private Thread pacman = new Thread(runPac);
+    private Pacman runPac=new Pacman(laberinto);
+    private Thread pacman=new Thread(runPac);
 
     private void dibujarTubo(Graphics g, int x, int y, int pixelX, int pixelY) {
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setColor(new Color(255, 0, 0)); // CAMBIO: Color rojo en lugar de azul
+        g2d.setColor(new Color(0, 0, 255));
         g2d.setStroke(new BasicStroke(2));
 
         // Verificar bloques adyacentes
-        boolean arriba = (y > 0) && (laberinto[y - 1][x] == 1);
-        boolean abajo = (y < HEIGHT - 1) && (laberinto[y + 1][x] == 1);
-        boolean izquierda = (x > 0) && (laberinto[y][x - 1] == 1);
-        boolean derecha = (x < WIDTH - 1) && (laberinto[y][x + 1] == 1);
+        boolean arriba = (y > 0) && (laberinto[y-1][x] == 1);
+        boolean abajo = (y < HEIGHT-1) && (laberinto[y+1][x] == 1);
+        boolean izquierda = (x > 0) && (laberinto[y][x-1] == 1);
+        boolean derecha = (x < WIDTH-1) && (laberinto[y][x+1] == 1);
 
         int margin = 1;
         int arcSize = CELL_SIZE / 4;
@@ -126,15 +141,15 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
             if (!izquierda && !derecha) {
                 // Borde superior completamente redondeado
                 g2d.drawArc(x1, y1, arcSize, arcSize, 90, 90); // esquina sup-izq
-                g2d.drawLine(x1 + arcSize / 2, y1, x2 - arcSize / 2, y1); // línea superior
+                g2d.drawLine(x1 + arcSize/2, y1, x2 - arcSize/2, y1); // línea superior
                 g2d.drawArc(x2 - arcSize, y1, arcSize, arcSize, 0, 90); // esquina sup-der
             } else if (!izquierda) {
                 // Redondeado solo en esquina superior izquierda
                 g2d.drawArc(x1, y1, arcSize, arcSize, 90, 90);
-                g2d.drawLine(x1 + arcSize / 2, y1, x2, y1);
+                g2d.drawLine(x1 + arcSize/2, y1, x2, y1);
             } else if (!derecha) {
                 // Redondeado solo en esquina superior derecha
-                g2d.drawLine(x1, y1, x2 - arcSize / 2, y1);
+                g2d.drawLine(x1, y1, x2 - arcSize/2, y1);
                 g2d.drawArc(x2 - arcSize, y1, arcSize, arcSize, 0, 90);
             } else {
                 // Sin redondeo si hay conexiones a ambos lados
@@ -147,15 +162,15 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
             if (!izquierda && !derecha) {
                 // Borde inferior completamente redondeado
                 g2d.drawArc(x1, y2 - arcSize, arcSize, arcSize, 180, 90); // esquina inf-izq
-                g2d.drawLine(x1 + arcSize / 2, y2, x2 - arcSize / 2, y2); // línea inferior
+                g2d.drawLine(x1 + arcSize/2, y2, x2 - arcSize/2, y2); // línea inferior
                 g2d.drawArc(x2 - arcSize, y2 - arcSize, arcSize, arcSize, 270, 90); // esquina inf-der
             } else if (!izquierda) {
                 // Redondeado solo en esquina inferior izquierda
                 g2d.drawArc(x1, y2 - arcSize, arcSize, arcSize, 180, 90);
-                g2d.drawLine(x1 + arcSize / 2, y2, x2, y2);
+                g2d.drawLine(x1 + arcSize/2, y2, x2, y2);
             } else if (!derecha) {
                 // Redondeado solo en esquina inferior derecha
-                g2d.drawLine(x1, y2, x2 - arcSize / 2, y2);
+                g2d.drawLine(x1, y2, x2 - arcSize/2, y2);
                 g2d.drawArc(x2 - arcSize, y2 - arcSize, arcSize, arcSize, 270, 90);
             } else {
                 // Sin redondeo si hay conexiones a ambos lados
@@ -169,10 +184,10 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
                 // Ya dibujado en las esquinas superiores/inferiores
             } else if (!arriba) {
                 // Desde esquina redondeada hacia abajo
-                g2d.drawLine(x1, y1 + arcSize / 2, x1, y2);
+                g2d.drawLine(x1, y1 + arcSize/2, x1, y2);
             } else if (!abajo) {
                 // Desde arriba hacia esquina redondeada
-                g2d.drawLine(x1, y1, x1, y2 - arcSize / 2);
+                g2d.drawLine(x1, y1, x1, y2 - arcSize/2);
             } else {
                 // Línea completa si hay conexiones arriba y abajo
                 g2d.drawLine(x1, y1, x1, y2);
@@ -185,10 +200,10 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
                 // Ya dibujado en las esquinas superiores/inferiores
             } else if (!arriba) {
                 // Desde esquina redondeada hacia abajo
-                g2d.drawLine(x2, y1 + arcSize / 2, x2, y2);
+                g2d.drawLine(x2, y1 + arcSize/2, x2, y2);
             } else if (!abajo) {
                 // Desde arriba hacia esquina redondeada
-                g2d.drawLine(x2, y1, x2, y2 - arcSize / 2);
+                g2d.drawLine(x2, y1, x2, y2 - arcSize/2);
             } else {
                 // Línea completa si hay conexiones arriba y abajo
                 g2d.drawLine(x2, y1, x2, y2);
@@ -197,11 +212,8 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
 
         // Restaurar stroke normal
         g2d.setStroke(new BasicStroke(1));
-    }
+    };
 
-    ;
-
-    // Método para contar puntos iniciales
     private void contarPuntosIniciales() {
         puntosRestantes = 0;
         for (int y = 0; y < HEIGHT; y++) {
@@ -247,6 +259,28 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
         gameThread = new Thread(this);
         gameThread.start();
         pacman.start();
+
+        // Inicializar fantasmas y sus threads
+        clyde = new Clyde(runPac, laberinto);
+        threadClyde = new Thread(clyde);
+        threadClyde.start();
+
+        blinky = new Blinky(runPac, laberinto);
+        threadBlinky = new Thread(blinky);
+        threadBlinky.start();
+
+        pinky = new Pinky(runPac, laberinto);
+        threadPinky = new Thread(pinky);
+        threadPinky.start();
+
+        inky = new Inky(runPac, laberinto);
+        threadInky = new Thread(inky);
+        threadInky.start();
+
+        pikzy = new Pikzy(runPac, laberinto);
+        threadPikzy = new Thread(pikzy);
+        threadPikzy.start();
+
     }
 
     @Override
@@ -266,6 +300,12 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
 
         // Dibujar el mapa
         dibujarMapa(g2d);
+
+        clyde.dibujarClyde(g2d);
+        blinky.dibujarBlinky(g2d);
+        pinky.dibujarPinky(g2d);
+        inky.dibujarInky(g2d);
+        pikzy.dibujarPikzy(g2d);
 
         // Resetear transformación para UI
         g2d.setTransform(new java.awt.geom.AffineTransform());
@@ -287,7 +327,7 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
                 int pixelY = y * CELL_SIZE;
 
                 switch (cellValue) {
-                    case 1: // Paredes (bordes rojos con efecto de tubo)
+                    case 1: // Paredes (bordes azules con efecto de tubo)
                         dibujarTubo(g, x, y, pixelX, pixelY);
                         break;
 
@@ -297,10 +337,11 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
                         int dotX = pixelX + CELL_SIZE / 2 - dotSize / 2;
                         int dotY = pixelY + CELL_SIZE / 2 - dotSize / 2;
                         g.fillOval(dotX, dotY, dotSize, dotSize);
+
                         break;
 
                     case 3: // Power Pellets (rosa grande)
-                        if (this.mostrarPuntos) {
+                        if(this.mostrarPuntos){
                             g.setColor(new Color(255, 184, 255));
                             int pelletSize = CELL_SIZE / 2;
                             int pelletX = pixelX + CELL_SIZE / 2 - pelletSize / 2;
@@ -309,16 +350,17 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
 
                             // Efecto de brillo
                             g.setColor(Color.WHITE);
-                            g.fillOval(pelletX + pelletSize / 4, pelletY + pelletSize / 4, pelletSize / 4, pelletSize / 4);
+                            g.fillOval(pelletX + pelletSize/4, pelletY + pelletSize/4, pelletSize/4, pelletSize/4);
                         }
                         break;
+
                     case 4:
                         ImageIcon imagen = runPac.getImagen();
-                        int TamPacman = CELL_SIZE / 2;
-                        int pacX = (runPac.getXposcion() * CELL_SIZE) + (CELL_SIZE - TamPacman) / 2;
-                        int pacY = (runPac.getYposcion() * CELL_SIZE) + (CELL_SIZE - TamPacman) / 2;
+                        int TamPacman = CELL_SIZE/2;
+                        int pacX = (runPac.getXposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
+                        int pacY = (runPac.getYposcion()*CELL_SIZE)+(CELL_SIZE-TamPacman)/2;
 
-                        if (laberinto[runPac.getYposcion()][runPac.getXposcion()] == 2) {
+                        if(laberinto[runPac.getYposcion()][runPac.getXposcion()] == 2){
                             // Sumar puntos y reducir contador
                             incrementarScore(5);
                             puntajeNivel += 5;
@@ -329,21 +371,27 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
                             if (puntosRestantes <= 0) {
                                 nivelCompletado = true;
                             }
-                        } else if (laberinto[runPac.getYposcion()][runPac.getXposcion()] == 3) {
-                            // Power pellet - puntos extra
+                        }
+                        else if(laberinto[runPac.getYposcion()][runPac.getXposcion()] == 3){
+                            // Power pellet - activar modo fantasmas comestibles
                             incrementarScore(50);
                             laberinto[runPac.getYposcion()][runPac.getXposcion()] = 0;
+
+                            // NUEVA FUNCIONALIDAD: Activar pastilla
+                            pastillaActivada();
                         }
 
                         // Lógica del túnel
-                        if (runPac.getXposcion() == 0 && runPac.getYposcion() == 14) {
+                        if(runPac.getXposcion() == 0 && runPac.getYposcion() == 14){
                             runPac.setXposcion(26);
-                        } else if (runPac.getXposcion() == 27 && runPac.getYposcion() == 14) {
+                        }
+                        else if(runPac.getXposcion() == 27 && runPac.getYposcion() == 14){
                             runPac.setXposcion(1);
                         }
 
-                        if (imagen != null) {
-                            imagen.paintIcon(this, g, pacX, pacY);
+                        if(imagen != null){
+                            //imagen.paintIcon(this, g, pacX, pacY);
+                            g.drawImage(imagen.getImage(), runPac.getXposcion() * 20, runPac.getYposcion() * 20, 20, 20, null);
                         }
                         break;
 
@@ -451,21 +499,102 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
         }
     }
 
-    //metodos Mapa2
+    private void reanudarJuego() {
+        enPausa = false;
+        pausarTodosLosFantasmas(false);
+        runPac.setPause(false);
+    }
+
+    //metodos Mapa
     private void manejarMenuPausa(KeyEvent e) {
         switch (e.getKeyCode()) {
+            case KeyEvent.VK_ESCAPE:
+                reanudarJuego();
+                break;
+
             case KeyEvent.VK_UP:
+            case KeyEvent.VK_W:
                 opcionSeleccionada = (opcionSeleccionada - 1 + opcionesMenu.length) % opcionesMenu.length;
                 break;
+
             case KeyEvent.VK_DOWN:
+            case KeyEvent.VK_S:
                 opcionSeleccionada = (opcionSeleccionada + 1) % opcionesMenu.length;
                 break;
+
             case KeyEvent.VK_ENTER:
-                ejecutarOpcionMenu();
+                switch (opcionSeleccionada) {
+                    case 0: // Continuar
+                        reanudarJuego();
+                        break;
+                    case 1: // Regresar al Menú
+                        regresarAlMenu();
+                        break;
+                    case 2: // Salir del juego (opcional)
+                        System.exit(0);
+                        break;
+                }
                 break;
-            case KeyEvent.VK_ESCAPE:
-                enPausa = false; // Salir del menú de pausa
-                break;
+        }
+    }
+
+    private void regresarAlMenu() {
+        // Detener todos los hilos
+        detenerJuego();
+
+        // Cerrar la ventana actual del juego
+        JFrame ventanaActual = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (ventanaActual != null) {
+            ventanaActual.dispose();
+        }
+
+        // Mostrar la ventana de inicio que ya existía
+        SwingUtilities.invokeLater(() -> {
+            if (ventanaInicio != null) {
+                ventanaInicio.setVisible(true);
+                ventanaInicio.toFront(); // Traer al frente
+                ventanaInicio.requestFocus(); // Dar foco a la ventana
+
+                // CLAVE: Dar foco específicamente al componente que maneja las teclas
+                Component componente = ventanaInicio.getContentPane().getComponent(0);
+                if (componente != null) {
+                    componente.requestFocusInWindow();
+                }
+
+                // Alternativa si lo anterior no funciona:
+                // ventanaInicio.setFocusable(true);
+                // ventanaInicio.requestFocusInWindow();
+            } else {
+                // Si por alguna razón no tenemos la referencia, crear nueva
+                new PantallaInicio().setVisible(true);
+            }
+        });
+    }
+
+    private void detenerJuego() {
+        // Detener PacMan
+        if (runPac != null) {
+            runPac.setPause(true);
+            if (runPac.moveTimer != null) {
+                runPac.moveTimer.stop();
+            }
+        }
+
+        // Detener todos los fantasmas
+        if (clyde != null) {
+            clyde.detener();
+        }
+        if (blinky != null) {
+            blinky.detener();
+        }
+        if (pinky != null) {
+            pinky.detener();
+        }
+        if (inky != null) {
+            inky.detener();
+        }
+        if (pikzy != null) {
+            pikzy.detener();
         }
     }
 
@@ -473,7 +602,15 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
         switch (opcionSeleccionada) {
             case 0: // Continuar
                 enPausa = false;
+
+                // Reanudar todos los fantasmas
+                if (clyde != null) clyde.setPausado(false);
+                if (blinky != null) blinky.setPausado(false);
+                if (pinky != null) pinky.setPausado(false);
+                if (inky != null) inky.setPausado(false);
+                if (pikzy != null) pikzy.setPausado(false);
                 break;
+
             case 1: // Salir
                 // Detener el juego
                 detener();
@@ -612,6 +749,10 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
                 long tiempoTranscurrido = tiempoActual - tiempoInicio;
                 mostrarPuntos = (tiempoTranscurrido / 500) % 2 == 0;
 
+                // NUEVAS VERIFICACIONES:
+                verificarEstadoPowerPellet();
+                verificarColisiones();
+
                 // Verificar si el nivel está completado
                 if (nivelCompletado) {
                     cambiarANivel3();
@@ -629,6 +770,11 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
         }
     }
 
+    // Getter para que los fantasmas puedan consultar el estado
+    public boolean isModoFantasmasComestibles() {
+        return modoFantasmasComestibles;
+    }
+
     // Métodos para controlar el juego
     public void incrementarScore(int puntos) {
         highScore += puntos;
@@ -639,7 +785,6 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
             vidas--;
         }
     }
-
     public void agregarVida() {
         vidas++;
     }
@@ -660,41 +805,273 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
         this.highScore = score;
     }
 
+    public void pastillaActivada() {
+        modoFantasmasComestibles = true;
+        tiempoActivacionPowerPellet = System.currentTimeMillis();
+
+        // Notificar a todos los fantasmas que ahora son vulnerables
+        if (clyde != null) clyde.setVulnerable(true);
+        if (blinky != null) blinky.setVulnerable(true);
+        if (pinky != null) pinky.setVulnerable(true);
+        if (inky != null) inky.setVulnerable(true);
+        if (pikzy != null) pikzy.setVulnerable(true);
+
+        System.out.println("¡Power Pellet activado! Los fantasmas son vulnerables por " + (DURACION_POWER_PELLET/1000) + " segundos");
+    }
+
+    private void verificarEstadoPowerPellet() {
+        if (modoFantasmasComestibles) {
+            long tiempoTranscurrido = System.currentTimeMillis() - tiempoActivacionPowerPellet;
+
+            if (tiempoTranscurrido >= DURACION_POWER_PELLET) {
+                // Se acabó el efecto del Power Pellet
+                modoFantasmasComestibles = false;
+
+                // Notificar a todos los fantasmas que ya no son vulnerables
+                if (clyde != null) clyde.setVulnerable(false);
+                if (blinky != null) blinky.setVulnerable(false);
+                if (pinky != null) pinky.setVulnerable(false);
+                if (inky != null) inky.setVulnerable(false);
+                if (pikzy != null) pikzy.setVulnerable(false);
+
+                System.out.println("Efecto Power Pellet terminado. Los fantasmas vuelven a ser peligrosos.");
+            }
+        }
+    }
+
+    private void verificarColisiones() {
+        int pacX = runPac.getXposcion();
+        int pacY = runPac.getYposcion();
+
+        // Verificar colisión con cada fantasma
+        verificarColisionFantasma("Clyde", clyde, pacX, pacY);
+        verificarColisionFantasma("Blinky", blinky, pacX, pacY);
+        verificarColisionFantasma("Pinky", pinky, pacX, pacY);
+        verificarColisionFantasma("Inky", inky, pacX, pacY);
+        verificarColisionFantasma("Pikzy", pikzy, pacX, pacY);
+    }
+
+    private void verificarColisionFantasma(String nombre, Object fantasma, int pacX, int pacY) {
+        if (fantasma == null) return;
+
+        int fantasmaX = -1, fantasmaY = -1;
+
+        // Obtener posición del fantasma según su tipo
+        if (fantasma instanceof Clyde) {
+            Clyde c = (Clyde) fantasma;
+            fantasmaX = c.getClydeX();
+            fantasmaY = c.getClydeY();
+        } else if (fantasma instanceof Blinky) {
+            Blinky b = (Blinky) fantasma;
+            fantasmaX = b.getBlinkyX(); // Necesitas agregar este método
+            fantasmaY = b.getBlinkyY(); // Necesitas agregar este método
+        } else if (fantasma instanceof Pinky) {
+            Pinky p = (Pinky) fantasma;
+            fantasmaX = p.getPinkyX(); // Necesitas agregar este método
+            fantasmaY = p.getPinkyY(); // Necesitas agregar este método
+        } else if (fantasma instanceof Inky) {
+            Inky i = (Inky) fantasma;
+            fantasmaX = i.getInkyX(); // Necesitas agregar este método
+            fantasmaY = i.getInkyY(); // Necesitas agregar este método
+        } else if (fantasma instanceof Pikzy) {
+            Pikzy p = (Pikzy) fantasma;
+            fantasmaX = p.getPikzyX(); // Necesitas agregar este método
+            fantasmaY = p.getPikzyY(); // Necesitas agregar este método
+        }
+
+        // Verificar si están en la misma posición
+        if (fantasmaX == pacX && fantasmaY == pacY) {
+            if (modoFantasmasComestibles) {
+                // Pacman se come al fantasma
+                System.out.println("¡Pacman se comió a " + nombre + "!");
+                incrementarScore(200);
+
+                // Reiniciar fantasma según su tipo
+                if (fantasma instanceof Clyde) {
+                    ((Clyde) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Blinky) {
+                    ((Blinky) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Pinky) {
+                    ((Pinky) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Inky) {
+                    ((Inky) fantasma).reiniciarEnCentro();
+                } else if (fantasma instanceof Pikzy) {
+                    ((Pikzy) fantasma).reiniciarEnCentro();
+                }
+            } else {
+                // El fantasma mata a Pacman - AQUÍ SE PIERDE LA VIDA
+                System.out.println("¡" + nombre + " atrapó a Pacman!");
+                perderVida(); // Ya tienes este método implementado
+
+                if (getVidas() > 0) {
+                    reiniciarPosiciones();
+                } else {
+                    // Game Over
+                    System.out.println("Game Over!");
+                    mostrarPantallaGameOver();
+                }
+            }
+        }
+    }
+
+    private void mostrarPantallaGameOver() {
+        // Detener el juego actual
+        detener();
+
+        // Mostrar transición de Game Over
+        SwingUtilities.invokeLater(() -> {
+            JFrame currentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+
+            // Crear un panel de transición para Game Over
+            JPanel gameOverPanel = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    g.setColor(Color.BLACK);
+                    g.fillRect(0, 0, getWidth(), getHeight());
+
+                    g.setColor(Color.RED);
+                    g.setFont(new Font("Arial", Font.BOLD, 48));
+                    FontMetrics fm = g.getFontMetrics();
+                    String texto = "¡PERDISTE TODAS LAS VIDAS!";
+                    int x = (getWidth() - fm.stringWidth(texto)) / 2;
+                    int y = getHeight() / 2 - 50;
+                    g.drawString(texto, x, y);
+
+                    g.setColor(Color.YELLOW);
+                    texto = "GAME OVER";
+                    x = (getWidth() - fm.stringWidth(texto)) / 2;
+                    y = getHeight() / 2 + 50;
+                    g.drawString(texto, x, y);
+                }
+            };
+
+            currentFrame.setContentPane(gameOverPanel);
+            currentFrame.revalidate();
+            currentFrame.repaint();
+
+            // Después de 3 segundos, regresar al menú principal
+            Timer gameOverTimer = new Timer(3000, e -> {
+                currentFrame.dispose();
+
+                // Regresar a PantallaInicio
+                SwingUtilities.invokeLater(() -> {
+                    if (ventanaInicio != null) {
+                        ventanaInicio.setVisible(true);
+                        ventanaInicio.toFront();
+                        ventanaInicio.requestFocus();
+
+                        Component componente = ventanaInicio.getContentPane().getComponent(0);
+                        if (componente != null) {
+                            componente.requestFocusInWindow();
+                        }
+                    } else {
+                        // Si no hay referencia, crear nueva pantalla de inicio
+                        new PantallaInicio().setVisible(true);
+                    }
+                });
+            });
+            gameOverTimer.setRepeats(false);
+            gameOverTimer.start();
+        });
+    }
+
+    private void reiniciarPosiciones() {
+        // Reiniciar Pacman a su posición inicial
+        runPac.reiniciarPosicion();
+
+        // Reiniciar fantasmas al centro
+        if (clyde != null) clyde.reiniciarEnCentro();
+        if (blinky != null) blinky.reiniciarEnCentro();
+        if (pinky != null) pinky.reiniciarEnCentro();
+        if (inky != null) inky.reiniciarEnCentro();
+        if (pikzy != null) pikzy.reiniciarEnCentro();
+    }
+
+    private void pausarTodosLosFantasmas(boolean pausado) {
+        if (clyde != null) clyde.setPausado(pausado);
+        if (blinky != null) blinky.setPausado(pausado);
+        if (pinky != null) pinky.setPausado(pausado);
+        if (inky != null) inky.setPausado(pausado);
+        if (pikzy != null) pikzy.setPausado(pausado);
+    }
 
     // Eventos de teclado
     @Override
     public void keyPressed(KeyEvent e) {
         if (enPausa) {
+            // Manejar menú de pausa
             manejarMenuPausa(e);
             return;
         }
+
         switch (e.getKeyCode()) {
             case KeyEvent.VK_ESCAPE:
+                // Entrar en pausa
                 enPausa = true;
-                opcionSeleccionada = 0; // Resetear selección
+                opcionSeleccionada = 0;
+                pausarTodosLosFantasmas(true);
+                runPac.setPause(true);
                 break;
+
             case KeyEvent.VK_SPACE:
-                // Pausar/reanudar juego
+                // Pausa rápida sin menú
+                enPausa = !enPausa;
+                pausarTodosLosFantasmas(enPausa);
+                runPac.setPause(enPausa);
+                break;
+
             default:
-
-                runPac.moverPacman(e); // <<--- Esta línea es clave
-
+                runPac.moverPacman(e);
                 break;
         }
-        runPac.setPause(enPausa);
     }
 
     @Override
-    public void keyReleased(KeyEvent e) {
-    }
+    public void keyReleased(KeyEvent e) {}
 
     @Override
-    public void keyTyped(KeyEvent e) {
-    }
+    public void keyTyped(KeyEvent e) {}
 
     public void detener() {
-        guardarJugador(); // Guardar puntaje antes de salir
+        guardarJugador();
         running = false;
+
+        // Detener todos los fantasmas
+        if (clyde != null) {
+            clyde.detener();
+        }
+        if (threadClyde != null) {
+            threadClyde.interrupt();
+        }
+
+        if (blinky != null) {
+            blinky.detener();
+        }
+        if (threadBlinky != null) {
+            threadBlinky.interrupt();
+        }
+
+        if (pinky != null) {
+            pinky.detener();
+        }
+        if (threadPinky != null) {
+            threadPinky.interrupt();
+        }
+
+        if (inky != null) {
+            inky.detener();
+        }
+        if (threadInky != null) {
+            threadInky.interrupt();
+        }
+
+        if (pikzy != null) {
+            pikzy.detener();
+        }
+        if (threadPikzy != null) {
+            threadPikzy.interrupt();
+        }
 
         if (gameThread != null) {
             gameThread.interrupt();
@@ -743,17 +1120,17 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
             Timer transicionTimer = new Timer(2000, e -> {
                 currentFrame.dispose();
 
-                // Crear nueva ventana con Mapa2
-                JFrame frameNivel2 = new JFrame("Pac-Man - Nivel 3");
+                // Crear nueva ventana con Mapa3
+                JFrame frameNivel3 = new JFrame("Pac-Man - Nivel 3");
                 Mapa3 mapa3 = new Mapa3(jugadorActual);
                 mapa3.setHighScore(highScore); // Mantener puntaje
                 mapa3.setVentanaInicio(ventanaInicio);
 
-                frameNivel2.add(mapa3);
-                frameNivel2.setUndecorated(true);
-                frameNivel2.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                frameNivel2.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frameNivel2.setVisible(true);
+                frameNivel3.add(mapa3);
+                frameNivel3.setUndecorated(true);
+                frameNivel3.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                frameNivel3.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frameNivel3.setVisible(true);
 
                 mapa3.requestFocus();
             });
@@ -762,4 +1139,3 @@ public class Mapa2 extends JPanel implements Runnable, KeyListener {
         });
     }
 }
-

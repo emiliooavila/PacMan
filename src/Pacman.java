@@ -10,7 +10,7 @@ public class Pacman implements Runnable, KeyListener {
     enum Direction {UP,DOWN,LEFT,RIGHT,NONE};
     private Mapa.Direction movment= Mapa.Direction.RIGHT;
     Mapa.Direction aux=movment;
-    private Timer moveTimer;
+    public Timer moveTimer;
     private int [][] laberinto;
     private final int WIDTH = 28;
     private final int HEIGHT = 31;
@@ -165,25 +165,48 @@ public class Pacman implements Runnable, KeyListener {
     public void keyPressed(KeyEvent e) {
         moverPacman(e);
     }
-    public void moverPacman(KeyEvent e){
-        int x = this.getXposcion();
-        int y = this.getYposcion();
-        boolean can=false;
+    public void moverPacman(KeyEvent e) {
+        if (pause) {
+            return; // No mover si está en pausa
+        }
 
-        switch (e.getKeyCode()){
+        // Lógica de movimiento con flechas y WASD
+        switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
-                aux= Mapa.Direction.UP;
+            case KeyEvent.VK_W:
+                aux = Mapa.Direction.UP;
                 break;
             case KeyEvent.VK_DOWN:
-                aux= Mapa.Direction.DOWN;
+            case KeyEvent.VK_S:
+                aux = Mapa.Direction.DOWN;
                 break;
             case KeyEvent.VK_LEFT:
-                aux= Mapa.Direction.LEFT;
+            case KeyEvent.VK_A:
+                aux = Mapa.Direction.LEFT;
                 break;
             case KeyEvent.VK_RIGHT:
-                aux= Mapa.Direction.RIGHT;
+            case KeyEvent.VK_D:
+                aux = Mapa.Direction.RIGHT;
                 break;
         }
+    }
+
+    public void reiniciarPosicion() {
+        Xposicion = Xinicial;
+        Yposicion = Yinicial;
+
+        // Restaurar imagen inicial (mirando a la derecha)
+        try{
+            imagen = new ImageIcon(getClass().getResource("Pacmangif.gif"));
+        } catch(Exception e){
+            System.err.println("No se pudo cargar imagen inicial de Pacman: " + e);
+        }
+
+        // Restaurar dirección inicial
+        movment = Mapa.Direction.RIGHT;
+        aux = movment;
+
+        System.out.println("Pacman reiniciado en posición inicial");
     }
 
     @Override

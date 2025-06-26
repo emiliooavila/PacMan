@@ -468,13 +468,13 @@ public class PantallaInicio extends JPanel implements KeyListener {
     }
 
     private void iniciarJuego() {
-        // Crear nueva ventana para el juego
         SwingUtilities.invokeLater(() -> {
             JFrame gameFrame = new JFrame("Pac-Man");
             Mapa mapa = new Mapa(jugadorActual);
 
             // IMPORTANTE: Pasar referencia de la ventana de inicio al mapa
-            mapa.setVentanaInicio((JFrame) SwingUtilities.getWindowAncestor(this));
+            JFrame ventanaInicio = (JFrame) SwingUtilities.getWindowAncestor(this);
+            mapa.setVentanaInicio(ventanaInicio);
 
             gameFrame.add(mapa);
             gameFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -485,7 +485,7 @@ public class PantallaInicio extends JPanel implements KeyListener {
             mapa.requestFocusInWindow();
 
             // Ocultar la ventana actual de inicio
-            SwingUtilities.getWindowAncestor(this).setVisible(false);
+            ventanaInicio.setVisible(false);
         });
     }
 

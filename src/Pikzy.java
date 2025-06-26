@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.util.Random;
 import java.awt.*;
 import java.util.List;
+import java.util.ArrayList;
 
 
 public class Pikzy implements Runnable{
@@ -25,6 +26,15 @@ public class Pikzy implements Runnable{
     private Pacman auxPacman;
     private int estado = 1;
     private Timer timerCambio;
+
+    // Variables para control de pausa
+    private volatile boolean pausado = false;
+    private volatile boolean running = true;
+
+    // Variables para el modo vulnerable
+    private volatile boolean vulnerable = false;
+    private final int CENTRO_X = 12; // Ajustar según posición inicial deseada
+    private final int CENTRO_Y = 14; // Ajustar según posición inicial deseada
 
     public Pikzy(Pacman pacman, int [][] laberinto){
         try{
@@ -102,10 +112,6 @@ public class Pikzy implements Runnable{
             }
         }
 
-
-
-
-
         camino2 = new SimpleGraph<>(DefaultEdge.class);
 
         for (int y = 0; y < this.mapita2.length; y++) {
@@ -134,11 +140,13 @@ public class Pikzy implements Runnable{
             }
         }
 
-
+        // Timer para cambio de estado con pausa
         timerCambio = new Timer(8539, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cambiarEstado();
+                if (!pausado) { // Solo cambiar estado si no está pausado
+                    cambiarEstado();
+                }
             }
         });
 
@@ -149,19 +157,31 @@ public class Pikzy implements Runnable{
         return x + "_" + y;
     }
 
-
     @Override
     public void run() {
-        while (true) {
+        while (running) {
             try {
+                // Verificar si está pausado
+                while (pausado && running) {
+                    Thread.sleep(100); // Esperar mientras está pausado
+                }
+
+                if (!running) break; // Salir si se detuvo el juego
+
                 Thread.sleep(450);
                 String siguiente;
 
-                if(estado==1){
-                    siguiente = movimiento1Pikzy(auxPacman.getXposcion(), auxPacman.getYposcion());
-                }
-                else{
-                    siguiente = movimiento2Pikzy(auxPacman.getXposcion(), auxPacman.getYposcion());
+                if (vulnerable) {
+                    // Comportamiento cuando es vulnerable: huir del Pacman
+                    siguiente = movimientoVulnerable(auxPacman.getXposcion(), auxPacman.getYposcion());
+                } else {
+                    // Comportamiento normal según el estado
+                    if(estado==1){
+                        siguiente = movimiento1Pikzy(auxPacman.getXposcion(), auxPacman.getYposcion());
+                    }
+                    else{
+                        siguiente = movimiento2Pikzy(auxPacman.getXposcion(), auxPacman.getYposcion());
+                    }
                 }
 
                 if (siguiente != null) {
@@ -170,12 +190,15 @@ public class Pikzy implements Runnable{
                     pikzyY = Integer.parseInt(auxCoordenadas[1]);
                 }
 
+            } catch (InterruptedException e) {
+                System.out.println("Pikzy interrumpido: " + e.getMessage());
+                Thread.currentThread().interrupt();
+                break;
             } catch (Exception e) {
                 pikzyX=12;
                 pikzyY=14;
             }
         }
-
     }
 
     public String movimiento1Pikzy(int x, int y){
@@ -194,7 +217,6 @@ public class Pikzy implements Runnable{
         }
 
         return moverse.get(1);
-
     }
 
     public String movimiento2Pikzy(int x, int y){
@@ -213,7 +235,46 @@ public class Pikzy implements Runnable{
         }
 
         return moverse2.get(1);
+    }
 
+    // Método para movimiento cuando es vulnerable (huir del Pacman)
+    private String movimientoVulnerable(int pacmanX, int pacmanY) {
+        String origen = nodoId(pikzyX, pikzyY);
+
+        // Obtener todos los vecinos posibles del grafo actual
+        Graph<String, DefaultEdge> grafoActual = (estado == 1) ? camino : camino2;
+
+        List<String> vecinosDisponibles = new ArrayList<>();
+
+        for (DefaultEdge edge : grafoActual.edgesOf(origen)) {
+            String vecino = grafoActual.getEdgeSource(edge).equals(origen)
+                    ? grafoActual.getEdgeTarget(edge)
+                    : grafoActual.getEdgeSource(edge);
+            vecinosDisponibles.add(vecino);
+        }
+
+        if (vecinosDisponibles.isEmpty()) {
+            return origen;
+        }
+
+        // Encontrar el vecino más alejado del Pacman
+        String mejorVecino = null;
+        double maxDistancia = -1;
+
+        for (String vecino : vecinosDisponibles) {
+            String[] coords = vecino.split("_");
+            int vx = Integer.parseInt(coords[0]);
+            int vy = Integer.parseInt(coords[1]);
+
+            double distancia = Math.sqrt(Math.pow(vx - pacmanX, 2) + Math.pow(vy - pacmanY, 2));
+
+            if (distancia > maxDistancia) {
+                maxDistancia = distancia;
+                mejorVecino = vecino;
+            }
+        }
+
+        return mejorVecino != null ? mejorVecino : origen;
     }
 
     public void cambiarEstado(){
@@ -234,5 +295,63 @@ public class Pikzy implements Runnable{
         }
     }
 
+    // Métodos para controlar la pausa
+    public void setPausado(boolean pausado) {
+        this.pausado = pausado;
+    }
 
+    public void detener() {
+        this.running = false;
+        if (timerCambio != null) {
+            timerCambio.stop();
+        }
+    }
+
+    public boolean isPausado() {
+        return pausado;
+    }
+
+    /**
+     * Establece si el fantasma es vulnerable (puede ser comido)
+     */
+    public void setVulnerable(boolean vulnerable) {
+        this.vulnerable = vulnerable;
+        if (vulnerable) {
+            System.out.println("Pikzy ahora es vulnerable!");
+        } else {
+            System.out.println("Pikzy ya no es vulnerable.");
+        }
+    }
+
+    /**
+     * Verifica si el fantasma es vulnerable
+     */
+    public boolean isVulnerable() {
+        return vulnerable;
+    }
+
+    /**
+     * Reinicia el fantasma en el centro del mapa
+     */
+    public void reiniciarEnCentro() {
+        // Establecer coordenadas del centro (ajustar según cada fantasma)
+        pikzyX = CENTRO_X;
+        pikzyY = CENTRO_Y;
+        vulnerable = false;
+        System.out.println("Pikzy reiniciado en el centro del mapa");
+    }
+
+    /**
+     * Obtiene la posición X actual
+     */
+    public int getPikzyX() {
+        return pikzyX;
+    }
+
+    /**
+     * Obtiene la posición Y actual
+     */
+    public int getPikzyY() {
+        return pikzyY;
+    }
 }
