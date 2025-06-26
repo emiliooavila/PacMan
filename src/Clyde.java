@@ -11,6 +11,7 @@ import java.util.List;
 
 public class Clyde implements Runnable{
     private ImageIcon imagenClyde;
+    private ImageIcon imagenAsustado;
     private int[][] mapita;
     private Graph<String, DefaultEdge> camino;
     private int clydeX;
@@ -29,6 +30,8 @@ public class Clyde implements Runnable{
     public Clyde(Pacman pacman, int[][] laberinto){
         try{
             imagenClyde=new ImageIcon(getClass().getResource("clyde.gif"));
+            imagenAsustado=new ImageIcon((getClass().getResource("fantasmaAsustado.gif")));
+
         }catch(Exception e){
             System.err.println("Algo salio mal " + e);
         }
@@ -197,9 +200,14 @@ public class Clyde implements Runnable{
     }
 
     public void dibujarClyde(Graphics g) {
-        if (imagenClyde != null) {
+        if(vulnerable){
+            g.drawImage(imagenAsustado.getImage(), clydeX * 20, clydeY * 20, 20, 20, null);
+        }
+        else{
             g.drawImage(imagenClyde.getImage(), clydeX * 20, clydeY * 20, 20, 20, null);
         }
+
+
     }
 
     // Métodos para controlar la pausa

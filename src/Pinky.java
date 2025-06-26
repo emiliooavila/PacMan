@@ -10,6 +10,7 @@ import java.util.List;
 
 public class Pinky implements Runnable{
     private ImageIcon imagenPinky;
+    private ImageIcon imagenAsustado;
     private int[][] mapita;
     private Graph<String, DefaultEdge> camino;
     private int pinkyX;
@@ -28,6 +29,7 @@ public class Pinky implements Runnable{
     public Pinky(Pacman pacman, int[][] laberinto){
         try{
             imagenPinky=new ImageIcon(getClass().getResource("pinky.gif"));
+            imagenAsustado=new ImageIcon(getClass().getResource("fantasmaAsustado.gif"));
         }catch(Exception e){
             System.err.println("Algo salio mal " + e);
         }
@@ -194,7 +196,10 @@ public class Pinky implements Runnable{
     }
 
     public void dibujarPinky(Graphics g) {
-        if (imagenPinky != null) {
+        if(vulnerable){
+            g.drawImage(imagenAsustado.getImage(), pinkyX * 20, pinkyY * 20, 20, 20, null);
+        }
+        else{
             g.drawImage(imagenPinky.getImage(), pinkyX * 20, pinkyY * 20, 20, 20, null);
         }
     }

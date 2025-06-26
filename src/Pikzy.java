@@ -17,6 +17,7 @@ import java.util.ArrayList;
 public class Pikzy implements Runnable{
     private ImageIcon imagenPikzyNegro;
     private ImageIcon imagenPikzyBlanco;
+    private ImageIcon imagenAsustado;
     private int[][] mapita;
     private int[][] mapita2;
     private Graph<String, DefaultEdge> camino;
@@ -40,6 +41,7 @@ public class Pikzy implements Runnable{
         try{
             imagenPikzyNegro=new ImageIcon(getClass().getResource("pikzyNegro.gif"));
             imagenPikzyBlanco=new ImageIcon(getClass().getResource("pikzyBlanco.gif"));
+            imagenAsustado=new ImageIcon(getClass().getResource("fantasmaAsustado.gif"));
         }catch(Exception e){
             System.err.println("Algo salio mal " + e);
         }
@@ -287,12 +289,18 @@ public class Pikzy implements Runnable{
     }
 
     public void dibujarPikzy(Graphics g) {
-        if (estado==1) {
-            g.drawImage(imagenPikzyNegro.getImage(), pikzyX * 20, pikzyY * 20, 20, 20, null);
+        if (vulnerable) {
+            g.drawImage(imagenAsustado.getImage(), pikzyX * 20, pikzyY * 20, 20, 20, null);
         }
         else{
-            g.drawImage(imagenPikzyBlanco.getImage(), pikzyX * 20, pikzyY * 20, 20, 20, null);
+            if (estado==1) {
+                g.drawImage(imagenPikzyNegro.getImage(), pikzyX * 20, pikzyY * 20, 20, 20, null);
+            }
+            else{
+                g.drawImage(imagenPikzyBlanco.getImage(), pikzyX * 20, pikzyY * 20, 20, 20, null);
+            }
         }
+
     }
 
     // Métodos para controlar la pausa
