@@ -324,11 +324,6 @@ public class Pikzy implements Runnable{
      */
     public void setVulnerable(boolean vulnerable) {
         this.vulnerable = vulnerable;
-        if (vulnerable) {
-            System.out.println("Pikzy ahora es vulnerable!");
-        } else {
-            System.out.println("Pikzy ya no es vulnerable.");
-        }
     }
 
     /**

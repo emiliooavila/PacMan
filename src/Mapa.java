@@ -768,6 +768,7 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
                 // NUEVAS VERIFICACIONES:
                 verificarEstadoPowerPellet();
                 verificarColisiones();
+                verificarEaster();
 
                 // Verificar si el nivel está completado
                 if (nivelCompletado) {
@@ -865,6 +866,14 @@ public class Mapa extends JPanel implements Runnable, KeyListener {
         verificarColisionFantasma("Pinky", pinky, pacX, pacY);
         verificarColisionFantasma("Inky", inky, pacX, pacY);
         verificarColisionFantasma("Pikzy", pikzy, pacX, pacY);
+    }
+
+    public void verificarEaster(){
+        if(puntosRestantes==1){
+            if(runPac.getXposcion()==16 && runPac.getYposcion()==14){
+                Egg egg = new Egg();
+            }
+        }
     }
 
     private void verificarColisionFantasma(String nombre, Object fantasma, int pacX, int pacY) {
