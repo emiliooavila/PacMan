@@ -110,7 +110,7 @@ public class Blinky implements Runnable{
                 }
 
             } catch (InterruptedException e) {
-                System.out.println("Blinky interrumpido: " + e.getMessage());
+                //System.out.println("Blinky interrumpido: " + e.getMessage());
                 Thread.currentThread().interrupt();
                 break;
             }
@@ -193,11 +193,6 @@ public class Blinky implements Runnable{
      */
     public void setVulnerable(boolean vulnerable) {
         this.vulnerable = vulnerable;
-        if (vulnerable) {
-            System.out.println("BLINKY ahora es vulnerable!");
-        } else {
-            System.out.println("BLINKY ya no es vulnerable.");
-        }
     }
 
     /**
@@ -214,7 +209,6 @@ public class Blinky implements Runnable{
         blinkyX = CENTRO_X;
         blinkyY = CENTRO_Y;
         vulnerable = false;
-        System.out.println("BLINKY reiniciado en el centro del mapa");
     }
 
     /**

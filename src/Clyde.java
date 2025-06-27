@@ -173,11 +173,6 @@ public class Clyde implements Runnable{
 
     public void setVulnerable(boolean vulnerable) {
         this.vulnerable = vulnerable;
-        if (vulnerable) {
-            System.out.println("Clyde ahora es vulnerable!");
-        } else {
-            System.out.println("Clyde ya no es vulnerable.");
-        }
     }
 
     public boolean isVulnerable() {
@@ -188,7 +183,6 @@ public class Clyde implements Runnable{
         clydeX = CENTRO_X;
         clydeY = CENTRO_Y;
         vulnerable = false; // Al reiniciar, ya no es vulnerable
-        System.out.println("Clyde reiniciado en el centro del mapa");
     }
 
     public int getClydeX() {

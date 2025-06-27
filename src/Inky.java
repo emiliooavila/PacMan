@@ -221,11 +221,6 @@ public class Inky implements Runnable{
      */
     public void setVulnerable(boolean vulnerable) {
         this.vulnerable = vulnerable;
-        if (vulnerable) {
-            System.out.println("Inky ahora es vulnerable!");
-        } else {
-            System.out.println("Inky ya no es vulnerable.");
-        }
     }
 
 
@@ -239,7 +234,6 @@ public class Inky implements Runnable{
         inkyX = CENTRO_X;
         inkyY = CENTRO_Y;
         vulnerable = false;
-        System.out.println("Inky reiniciado en el centro del mapa");
     }
 
 
